@@ -5,45 +5,46 @@ import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ViewInAr
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import dev.qtremors.filion.about.AboutScreen
+import dev.qtremors.filion.about.LicensesScreen
+import dev.qtremors.filion.settings.FilionPreferences
+import dev.qtremors.filion.settings.SettingsScreen
+import dev.qtremors.filion.settings.resolveDarkTheme
 import dev.qtremors.filion.theme.FilionTheme
 import dev.qtremors.filion.ui.formatViewerFileSize
 import dev.qtremors.filion.viewer.ModelViewerScreen
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
-
-private const val PREFS_NAME = "filion_prefs"
-private const val KEY_FOLDERS = "scanned_folders"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,11 +53,27 @@ class MainActivity : ComponentActivity() {
         val initialTarget = resolveModelTarget(intent)
 
         setContent {
-            FilionTheme {
-                val context = LocalContext.current
+            val context = LocalContext.current
+            val preferences = remember { FilionPreferences(context.applicationContext) }
+            var themeMode by remember { mutableStateOf(preferences.themeMode) }
+            var dynamicColor by remember { mutableStateOf(preferences.dynamicColor) }
+            val dynamicColorAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            val systemDark = isSystemInDarkTheme()
+
+            FilionTheme(
+                darkTheme = themeMode.resolveDarkTheme(systemDark),
+                dynamicColor = dynamicColor && dynamicColorAvailable
+            ) {
                 var activeTarget by remember { mutableStateOf<ModelTarget?>(initialTarget) }
                 var localModels by remember { mutableStateOf<List<ModelTarget>>(emptyList()) }
                 var savedFolderItems by remember { mutableStateOf<List<FolderItem>>(emptyList()) }
+                var destinationStack by remember {
+                    mutableStateOf(listOf(AppDestination.HOME))
+                }
+
+                BackHandler(enabled = activeTarget == null && destinationStack.size > 1) {
+                    destinationStack = destinationStack.pop()
+                }
 
                 val pickerLauncher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.GetContent(),
@@ -101,10 +118,17 @@ class MainActivity : ComponentActivity() {
                                     uri,
                                     Intent.FLAG_GRANT_READ_URI_PERMISSION
                                 )
-                                saveFolder(context, uri)
+                                preferences.addFolder(uri)
                                 refreshLocalModels()
                             }.onFailure { e ->
-                                Toast.makeText(context, "Failed to persist folder permission: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    getString(
+                                        R.string.folder_permission_failed,
+                                        e.localizedMessage ?: getString(R.string.unsupported_request)
+                                    ),
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         }
                     }
@@ -130,18 +154,56 @@ class MainActivity : ComponentActivity() {
                             onOpenWith = { openTargetWithChooser(target) }
                         )
                     } else {
-                        HomeScreen(
-                            localModels = localModels,
-                            savedFolders = savedFolderItems,
-                            onSelectFile = { pickerLauncher.launch("*/*") },
-                            onSelectLocalModel = { activeTarget = it },
-                            onAddFolder = { folderPickerLauncher.launch(null) },
-                            onRemoveFolder = { uri ->
-                                removeFolder(context, uri)
-                                refreshLocalModels()
-                            },
-                            onRefresh = refreshLocalModels
-                        )
+                        when (destinationStack.last()) {
+                            AppDestination.HOME -> HomeScreen(
+                                localModels = localModels,
+                                onSelectFile = { pickerLauncher.launch("*/*") },
+                                onSelectLocalModel = { activeTarget = it },
+                                onAddFolder = { folderPickerLauncher.launch(null) },
+                                onOpenSettings = {
+                                    destinationStack = destinationStack.push(AppDestination.SETTINGS)
+                                },
+                                onRefresh = refreshLocalModels
+                            )
+                            AppDestination.SETTINGS -> SettingsScreen(
+                                themeMode = themeMode,
+                                dynamicColor = dynamicColor,
+                                dynamicColorAvailable = dynamicColorAvailable,
+                                folders = savedFolderItems,
+                                onThemeModeChange = { mode ->
+                                    preferences.themeMode = mode
+                                    themeMode = mode
+                                },
+                                onDynamicColorChange = { enabled ->
+                                    preferences.dynamicColor = enabled
+                                    dynamicColor = enabled
+                                },
+                                onAddFolder = { folderPickerLauncher.launch(null) },
+                                onRemoveFolder = { uri ->
+                                    preferences.removeFolder(uri)
+                                    runCatching {
+                                        contentResolver.releasePersistableUriPermission(
+                                            uri,
+                                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                        )
+                                    }
+                                    refreshLocalModels()
+                                },
+                                onOpenAbout = {
+                                    destinationStack = destinationStack.push(AppDestination.ABOUT)
+                                },
+                                onNavigateBack = { destinationStack = destinationStack.pop() }
+                            )
+                            AppDestination.ABOUT -> AboutScreen(
+                                onOpenLicenses = {
+                                    destinationStack = destinationStack.push(AppDestination.LICENSES)
+                                },
+                                onNavigateBack = { destinationStack = destinationStack.pop() }
+                            )
+                            AppDestination.LICENSES -> LicensesScreen(
+                                onNavigateBack = { destinationStack = destinationStack.pop() }
+                            )
+                        }
                     }
                 }
             }
@@ -201,26 +263,6 @@ class MainActivity : ComponentActivity() {
         }.getOrNull()
 }
 
-private fun getSavedFolders(context: Context): List<Uri> {
-    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    val folderStrings = prefs.getStringSet(KEY_FOLDERS, emptySet()) ?: emptySet()
-    return folderStrings.map { Uri.parse(it) }
-}
-
-private fun saveFolder(context: Context, uri: Uri) {
-    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    val folderStrings = prefs.getStringSet(KEY_FOLDERS, emptySet())?.toMutableSet() ?: mutableSetOf()
-    folderStrings.add(uri.toString())
-    prefs.edit().putStringSet(KEY_FOLDERS, folderStrings).apply()
-}
-
-private fun removeFolder(context: Context, uri: Uri) {
-    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    val folderStrings = prefs.getStringSet(KEY_FOLDERS, emptySet())?.toMutableSet() ?: return
-    folderStrings.remove(uri.toString())
-    prefs.edit().putStringSet(KEY_FOLDERS, folderStrings).apply()
-}
-
 private fun getFolderDisplayName(context: Context, uri: Uri): String {
     if (uri.scheme == "file") {
         return uri.lastPathSegment ?: "Local Folder"
@@ -237,7 +279,7 @@ private fun getFolderDisplayName(context: Context, uri: Uri): String {
 }
 
 private fun loadSavedFolders(context: Context): List<FolderItem> {
-    val uris = getSavedFolders(context)
+    val uris = FilionPreferences(context).folders()
     return uris.map { uri ->
         FolderItem(uri, getFolderDisplayName(context, uri))
     }
@@ -253,7 +295,7 @@ private fun scanLocalGlbFiles(context: Context): List<ModelTarget> {
     }
 
     // 2. Scan saved tree URIs
-    val savedFolders = getSavedFolders(context)
+    val savedFolders = FilionPreferences(context).folders()
     for (treeUri in savedFolders) {
         runCatching {
             scanTreeUri(context, treeUri, DocumentsContract.getTreeDocumentId(treeUri), results)
@@ -337,11 +379,10 @@ private fun scanTreeUri(
 @Composable
 private fun HomeScreen(
     localModels: List<ModelTarget>,
-    savedFolders: List<FolderItem>,
     onSelectFile: () -> Unit,
     onSelectLocalModel: (ModelTarget) -> Unit,
     onAddFolder: () -> Unit,
-    onRemoveFolder: (Uri) -> Unit,
+    onOpenSettings: () -> Unit,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -364,8 +405,19 @@ private fun HomeScreen(
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.primary
             )
-            IconButton(onClick = onRefresh) {
-                Icon(Icons.Default.Refresh, contentDescription = "Refresh models list")
+            Row {
+                IconButton(onClick = onRefresh) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = stringResource(R.string.refresh_models)
+                    )
+                }
+                IconButton(onClick = onOpenSettings) {
+                    Icon(
+                        Icons.Default.Settings,
+                        contentDescription = stringResource(R.string.open_settings)
+                    )
+                }
             }
         }
 
@@ -400,7 +452,7 @@ private fun HomeScreen(
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     Text(
-                        text = "Browse system picker for any model",
+                        text = stringResource(R.string.open_model_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                     )
@@ -408,88 +460,10 @@ private fun HomeScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Scan Folders Section Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Scan Folders",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            IconButton(onClick = onAddFolder) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add scanner folder",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-
-        if (savedFolders.isEmpty()) {
-            Text(
-                text = "No scan folders added yet. Click '+' above to select folders to search.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        } else {
-            // Folders lists
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-            ) {
-                savedFolders.forEach { folder ->
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Folder,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = folder.displayName,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            IconButton(onClick = { onRemoveFolder(folder.uri) }) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete folder",
-                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Models Discovered",
+            text = stringResource(R.string.models_discovered),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
@@ -512,16 +486,22 @@ private fun HomeScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "No GLB models found",
+                        text = stringResource(R.string.no_models_found),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                     )
                     Text(
-                        text = "Add scan folders or open a custom model",
+                        text = stringResource(R.string.no_models_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    FilledTonalButton(onClick = onAddFolder) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.add_scan_folder))
+                    }
                 }
             }
         } else {

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -11,14 +13,54 @@ android {
         applicationId = "dev.qtremors.filion"
         minSdk = 30
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.0.1"
+        versionCode = 5
+        versionName = "0.0.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    val keystoreProperties = Properties()
+    var keystorePropertiesFile = rootProject.file("signing.properties")
+    if (!keystorePropertiesFile.exists()) {
+        keystorePropertiesFile = rootProject.file("local.properties")
+    }
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use(keystoreProperties::load)
+    }
+
+    val storeFileProp = keystoreProperties["signing.storeFile"]?.toString()
+    val storePasswordProp = keystoreProperties["signing.storePassword"]?.toString()
+    val keyAliasProp = keystoreProperties["signing.keyAlias"]?.toString()
+    val keyPasswordProp = keystoreProperties["signing.keyPassword"]?.toString()
+    val hasSigningConfig = listOf(
+        storeFileProp,
+        storePasswordProp,
+        keyAliasProp,
+        keyPasswordProp
+    ).all { it != null }
+
+    if (hasSigningConfig) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(storeFileProp!!)
+                storePassword = storePasswordProp
+                keyAlias = keyAliasProp
+                keyPassword = keyPasswordProp
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            manifestPlaceholders["appLabel"] = "Filion Debug"
+        }
         release {
+            manifestPlaceholders["appLabel"] = "Filion"
+            if (hasSigningConfig) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -32,6 +74,16 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            val version = output.versionName.get() ?: "0.0.0"
+            output.outputFileName.set("Filion-$version.apk")
+        }
     }
 }
 

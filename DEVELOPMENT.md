@@ -1,113 +1,80 @@
-# Filion - Developer Documentation
+# Developing Filion
 
-> Architecture, implementation notes, conventions, and verification guidance for Filion development.
+Filion is a single-module Android app written in Kotlin and Jetpack Compose. Filament and SceneView handle GLB rendering.
 
-**Version:** 0.0.1 | **Last Updated:** 2026-07-12
-**Scope:** Internal development, 3D rendering architecture, SAF directory scanning, and testing.
+## Requirements
 
----
+- Android Studio with JDK 11 or newer
+- Android SDK 37
+- An Android 10+ device or emulator
 
-## Table of Contents
+## Build and test
 
-- [Architecture Overview](#architecture-overview)
-- [Project Structure](#project-structure)
-- [Scan Folders Pipeline](#scan-folders-pipeline)
-- [3D Rendering Engine](#3d-rendering-engine)
-- [Theming & M3 Expressive](#theming--m3-expressive)
-- [Build & Run](#build--run)
-- [Testing](#testing)
+Run commands from `filion-app/`:
 
----
-
-## Architecture Overview
-
-Filion is structured as a single-module, lightweight Jetpack Compose application designed to load 3D GLB models.
-
-```mermaid
-graph TD
-    A["MainActivity<br/>Folder Scans + Main Shell"] -->|renders| B["HomeScreen<br/>Folders List + Discovered Models"]
-    A -->|renders| C["ModelViewerScreen<br/>Sceneview Integration"]
-    C --> D["ModelViewerLoader<br/>Content Resolver bytes -> ByteBuffer"]
-    C --> E["ModelViewerChrome<br/>Top title banner + Bottom controls panel"]
+```bash
+./gradlew :app:assembleDebug
+./gradlew :app:testDebugUnitTest
 ```
 
-### Key Architectural Decisions
+On Windows, use `gradlew.bat`.
 
-| Decision | Rationale |
-|----------|-----------|
-| **SAF DocumentTree Scanning** | Bypasses restrictive Scoped Storage limitations. Users choose custom directories (like Downloads/3D), and Filion queries the child documents tree using `DocumentsContract` and `ContentResolver` recursively. |
-| **Stream-to-Buffer Loader** | Content URIs shared by other applications are converted to a raw byte array via `openInputStream` and wrapped in a `ByteBuffer`. This eliminates sceneview URI-resolution errors. |
-| **Variable font typography** | Implements the Google Sans Flex variable font family, generating runtime font weights, widths, and optical sizing dynamically. |
-| **No-Internet Policy** | The app request manifest does not include `android.permission.INTERNET` to ensure absolute privacy for local CAD/3D designs. |
-
----
-
-## Project Structure
+## Project layout
 
 ```text
-filion/
-├── filion-app/
-│   ├── app/
-│   │   ├── src/main/java/dev/qtremors/filion/
-│   │   │   ├── MainActivity.kt                  # Entry point, SAF folder persistency, and HomeScreen UI
-│   │   │   ├── theme/                           # Color, Theme, Type, and VariableFontFactory
-│   │   │   ├── ui/                              # Split buttons, custom menu items, cards, and dialogs
-│   │   │   └── viewer/                          # Sceneview integrations, overlays, state types, and loaders
-│   │   ├── src/main/res/                        # Drawable icons, layout settings, strings, and fonts
-│   │   └── src/test/java/                       # State unit tests
+filion-app/app/src/main/
+├── java/dev/qtremors/filion/
+│   ├── MainActivity.kt       App shell, file opening, sharing, and folder scans
+│   ├── about/                About and license screens
+│   ├── settings/             Settings UI and saved preferences
+│   ├── theme/                Compose theme
+│   ├── ui/                   Shared UI components
+│   └── viewer/               Model loading, rendering, state, and controls
+└── res/                      Strings, icons, themes, and bundled license text
 ```
 
----
+The static website lives in `docs/`.
 
-## Scan Folders Pipeline
+## How models are opened
 
-Filion stores directory permissions persistently:
-1. User selects a folder tree using `OpenDocumentTree()`.
-2. Persistable read permissions are acquired:
-   ```kotlin
-   contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-   ```
-3. Folder URI references are saved in `SharedPreferences`.
-4. Child items are scanned using `DocumentsContract.buildChildDocumentsUriUsingTree` with depth limits:
-   - Queries `COLUMN_DOCUMENT_ID`, `COLUMN_DISPLAY_NAME`, `COLUMN_MIME_TYPE`, and `COLUMN_SIZE`.
-   - Filters for subfolders and `.glb` matches.
+Filion accepts a GLB through its file picker or an Android `ACTION_VIEW` intent. The app reads the selected content URI through `ContentResolver`, copies the bytes into a `ByteBuffer`, and passes the buffer to SceneView.
 
----
+This keeps model loading compatible with Android document providers. Do not replace content URI handling with direct file paths.
 
-## 3D Rendering Engine
+## How folder scans work
 
-Filion renders models using Google's Filament:
-- **Renderer**: `SceneView` Composable node.
-- **Lighting**: Direct main lighting (10,000 intensity) and fill light (3,000 intensity) multiplied by the user's brightness slider state.
-- **Node Scaling**: Modulates scale matrices on gesture listeners Confirmed taps hide overlay UI chrome.
+1. The user chooses a folder with Android's system folder picker.
+2. Filion saves the read grant and folder URI.
+3. The app scans that tree for GLB files.
+4. Removing a folder deletes the saved URI and releases the grant when Android permits it.
 
----
+Keep scans tied to the selected folder URIs so saved access and displayed folder names remain stable.
 
-## Theming & M3 Expressive
+## Viewer state
 
-Expressive styling is defined under `dev.qtremors.filion.theme`:
-- `GSFlexPreset.EXPRESSIVE` builds display typography using extreme axes (`weight = 950f`, `width = 85f`, `roundness = 100f`).
-- `GSFlexPreset.COMPACT` and `GSFlexPreset.NEO` generate standard reading scales.
-- Accent colors fall back to Material 3 dynamic color styling.
+`ModelViewerState` holds the active control panel, zoom, light level, and background choice. `ModelViewerScreen` owns the SceneView integration, while `ModelViewerChrome` draws the controls, model details, sharing, and open-with actions.
 
----
+Keep model loading, gestures, lighting, and file actions independent. A viewer-control change should not alter how the selected URI is resolved or loaded.
 
-## Build & Run
+## Tests
 
-### Debug Build
-```bash
-cd filion-app
-./gradlew assembleDebug
+Unit tests cover navigation, preferences, and viewer state under:
+
+```text
+filion-app/app/src/test/java/dev/qtremors/filion/
 ```
 
-### Run Tests
-```bash
-./gradlew testDebugUnitTest
+Before submitting a change, run the unit tests and the narrowest relevant Android build task.
+
+## Website
+
+The GitHub Pages site is plain HTML and CSS:
+
+```text
+docs/
+├── assets/Filion.svg
+├── index.html
+└── styles.css
 ```
 
----
-
-## Testing
-
-Unit tests live under `src/test/java/dev/qtremors/filion/viewer/`:
-- **ModelViewerStateTest**: Asserts initial viewer state settings and active control drawer toggle logic.
+Keep the site copy short, keep the logo copy in sync with `assets/Filion.svg`, and test it at desktop and mobile widths before publishing.
