@@ -31,7 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -70,11 +70,11 @@ private val libraryNotices = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LicensesScreen(onNavigateBack: () -> Unit) {
-    val context = LocalContext.current
+    val resources = LocalResources.current
     val uriHandler = LocalUriHandler.current
     var showApacheText by rememberSaveable { mutableStateOf(false) }
-    val apacheText = remember(context) {
-        context.resources.openRawResource(R.raw.apache_2_0)
+    val apacheText = remember(resources) {
+        resources.openRawResource(R.raw.apache_2_0)
             .bufferedReader()
             .use { it.readText() }
     }

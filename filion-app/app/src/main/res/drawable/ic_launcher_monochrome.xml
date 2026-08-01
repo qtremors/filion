@@ -7,18 +7,21 @@
     <path
         android:fillColor="#00000000"
         android:fillType="evenOdd"
-        android:pathData="M250,66L380,141M398,239L398,343L250,428L103,343L103,174L250,89"
+        android:pathData="M388,159L269,90Q250,79 231,90L109,161Q91,171 91,192V324Q91,346 109,356L232,430Q251,441 270,430L391,355Q406,346 406,329V231"
         android:strokeColor="#FFFFFFFF"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
         android:strokeWidth="55" />
     <path
+        android:fillAlpha="0.9"
         android:fillColor="#FFFFFFFF"
         android:pathData="M293,204L342,232L293,260L251,236Z" />
     <path
+        android:fillAlpha="0.72"
         android:fillColor="#FFFFFFFF"
         android:pathData="M251,244L288,265L288,326L251,305Z" />
     <path
+        android:fillAlpha="0.82"
         android:fillColor="#FFFFFFFF"
         android:pathData="M297,265L342,239L342,300L297,326Z" />
     <path

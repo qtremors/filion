@@ -19,10 +19,7 @@
     <string name="model_viewer_background_theme">Theme</string>
     <string name="model_viewer_background_white">White</string>
     <string name="model_viewer_background_black">Black</string>
-    <string name="ok">OK</string>
-
     <!-- Home/Launcher screen strings -->
-    <string name="select_file_hint">Select a 3D model (.glb) to view</string>
     <string name="open_model">Open 3D Model</string>
     <string name="open_model_description">Browse the system picker for any GLB model</string>
     <string name="refresh_models">Refresh models</string>

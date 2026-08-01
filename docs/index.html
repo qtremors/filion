@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Filion — GLB viewer for Android</title>
-  <meta name="description" content="Open and inspect GLB models on Android. Filion works offline, without ads, accounts, analytics, or internet permission.">
+  <meta name="description" content="Open and inspect GLB models on Android with touch controls, scene lighting, backgrounds, and folder scanning.">
   <link rel="canonical" href="https://qtremors.github.io/filion/">
   <meta property="og:title" content="Filion — GLB viewer for Android">
-  <meta property="og:description" content="A private, offline GLB viewer for Android.">
+  <meta property="og:description" content="Open and inspect GLB models from every angle on Android.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://qtremors.github.io/filion/">
   <meta name="twitter:card" content="summary">
@@ -26,8 +26,11 @@
       </a>
       <div class="nav-links">
         <a href="#features">Features</a>
-        <a href="#privacy">Privacy</a>
-        <a href="#build">Build</a>
+        <a href="#controls">Controls</a>
+        <a class="download-link" href="https://github.com/qtremors/filion/releases" target="_blank" rel="noopener noreferrer">
+          <svg class="download-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/></svg>
+          <span>Download</span>
+        </a>
         <a href="https://github.com/qtremors/filion" target="_blank" rel="noopener noreferrer">GitHub</a>
       </div>
     </nav>
@@ -36,17 +39,20 @@
   <main id="main">
     <section class="hero shell" id="top">
       <div class="hero-copy">
-        <p class="eyebrow">Free · Open source · Android 10+</p>
-        <h1>View GLB models.<br><span>Nothing leaves your phone.</span></h1>
-        <p class="lede">Filion opens, inspects, and organizes GLB files on Android. It has no ads, accounts, analytics, or internet permission.</p>
+        <p class="eyebrow">GLB viewer · Android 10+</p>
+        <h1>Open a model.<br><span>Inspect every angle.</span></h1>
+        <p class="lede">Filion gives you a clear, touch-friendly view of GLB files, with lighting, background, file details, and folder scanning built in.</p>
         <div class="actions">
-          <a class="button primary" href="https://github.com/qtremors/filion/releases" target="_blank" rel="noopener noreferrer">Get Filion</a>
+          <a class="button primary download-link" href="https://github.com/qtremors/filion/releases" target="_blank" rel="noopener noreferrer">
+            <svg class="download-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/></svg>
+            <span>Download APK</span>
+          </a>
           <a class="button secondary" href="https://github.com/qtremors/filion" target="_blank" rel="noopener noreferrer">View source</a>
         </div>
         <ul class="plain-list" aria-label="Filion highlights">
-          <li>GLB files</li>
-          <li>Offline</li>
-          <li>MIT licensed</li>
+          <li>Rotate · pan · zoom</li>
+          <li>Lighting controls</li>
+          <li>Folder scanning</li>
         </ul>
       </div>
       <div class="hero-mark" aria-hidden="true">
@@ -57,7 +63,7 @@
     <section class="section shell" id="features">
       <div class="section-heading">
         <p class="kicker">Features</p>
-        <h2>The essentials for checking a model.</h2>
+        <h2>Everything needed to inspect a model.</h2>
       </div>
       <div class="feature-grid">
         <article>
@@ -67,63 +73,64 @@
         </article>
         <article>
           <span>02</span>
-          <h3>Inspect the scene</h3>
-          <p>Rotate, pan, zoom, change the light, and switch the background.</p>
+          <h3>Move around the scene</h3>
+          <p>Rotate, pan, and zoom to inspect the model from any angle.</p>
         </article>
         <article>
           <span>03</span>
-          <h3>Scan selected folders</h3>
-          <p>Grant read access only to the folders you want Filion to scan.</p>
+          <h3>Adjust the view</h3>
+          <p>Change scene brightness and switch between theme, black, and white backgrounds.</p>
         </article>
         <article>
           <span>04</span>
-          <h3>Check file details</h3>
-          <p>See the model name, size, file type, and local document reference.</p>
+          <h3>Build a model list</h3>
+          <p>Scan selected folders and see each model's name, size, and file type.</p>
         </article>
       </div>
     </section>
 
-    <section class="section soft-section">
+    <section class="section soft-section" id="start">
       <div class="shell">
         <div class="section-heading">
           <p class="kicker">Quick start</p>
           <h2>Open a model in three steps.</h2>
         </div>
         <ol class="steps">
-          <li><strong>Install</strong><span>Download the APK from GitHub Releases.</span></li>
+          <li><strong>Download</strong><span>Choose the latest APK from GitHub Releases.</span></li>
           <li><strong>Choose</strong><span>Pick a GLB file or add a scan folder.</span></li>
           <li><strong>Inspect</strong><span>Use touch controls to view the model.</span></li>
         </ol>
       </div>
     </section>
 
-    <section class="section shell" id="privacy">
-      <div class="privacy-panel">
+    <section class="section shell" id="controls">
+      <div class="viewer-panel">
         <div>
-          <p class="kicker">Privacy</p>
-          <h2>Your models stay on your device.</h2>
-          <p>Filion does not declare Android's internet permission. It cannot upload your models, and it includes no advertising, analytics, telemetry, accounts, or cloud service.</p>
-          <a class="arrow-link" href="https://github.com/qtremors/filion/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">Read the privacy policy →</a>
+          <p class="kicker">Viewer controls</p>
+          <h2>Move through the model naturally.</h2>
+          <p>Use familiar touch gestures, then tune the scene so surfaces, edges, and materials are easier to examine.</p>
         </div>
         <dl>
-          <div><dt>Internet permission</dt><dd>None</dd></div>
-          <div><dt>Ads and analytics</dt><dd>None</dd></div>
-          <div><dt>Accounts and cloud</dt><dd>None</dd></div>
-          <div><dt>Model processing</dt><dd>On device</dd></div>
+          <div><dt>Rotate</dt><dd>Drag</dd></div>
+          <div><dt>Pan</dt><dd>Two-finger drag</dd></div>
+          <div><dt>Zoom</dt><dd>Pinch or slider</dd></div>
+          <div><dt>Scene</dt><dd>Light and background</dd></div>
         </dl>
       </div>
     </section>
 
-    <section class="section soft-section" id="build">
-      <div class="shell build-grid">
+    <section class="section soft-section" id="library">
+      <div class="shell library-grid">
         <div>
-          <p class="kicker">Build from source</p>
-          <h2>One Android app module.</h2>
-          <p>Filion is written in Kotlin with Jetpack Compose, Filament, and SceneView.</p>
-          <a class="arrow-link" href="https://github.com/qtremors/filion/blob/main/DEVELOPMENT.md" target="_blank" rel="noopener noreferrer">Read the development guide →</a>
+          <p class="kicker">Model library</p>
+          <h2>Keep GLB files within reach.</h2>
+          <p>Open one model directly or add folders that Filion can scan whenever you want to revisit a file.</p>
         </div>
-        <pre><code>cd filion-app
-./gradlew :app:assembleDebug</code></pre>
+        <ul class="model-facts">
+          <li><strong>Format</strong><span>GLB</span></li>
+          <li><strong>Open from</strong><span>Filion or another app</span></li>
+          <li><strong>Details</strong><span>Name, size, and file type</span></li>
+        </ul>
       </div>
     </section>
 
@@ -138,8 +145,12 @@
           <p>Filion currently supports GLB, the binary form of glTF.</p>
         </details>
         <details>
-          <summary>Why choose scan folders?</summary>
-          <p>Android lets you grant read access to specific folders instead of all storage. Filion remembers the folders you choose until you remove them in Settings.</p>
+          <summary>How do the viewer controls work?</summary>
+          <p>Drag to rotate, use two fingers to pan, and pinch or use the zoom control to move closer.</p>
+        </details>
+        <details>
+          <summary>Why add scan folders?</summary>
+          <p>Filion can collect GLB files from folders you choose and show them together on the home screen.</p>
         </details>
         <details>
           <summary>Where can I report a problem?</summary>
@@ -153,11 +164,15 @@
     <div class="shell footer-row">
       <div>
         <a class="brand" href="#top"><img src="assets/Filion.svg" alt="" width="32" height="32"><span>Filion</span></a>
-        <p>Offline GLB viewing for Android.</p>
+        <p>GLB model viewing for Android.</p>
       </div>
       <div class="footer-links">
-        <a href="https://github.com/qtremors/filion/releases">Releases</a>
+        <a class="download-link" href="https://github.com/qtremors/filion/releases">
+          <svg class="download-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/></svg>
+          <span>Download APK</span>
+        </a>
         <a href="https://github.com/qtremors/filion/blob/main/CHANGELOG.md">Changelog</a>
+        <a href="https://github.com/qtremors/filion/blob/main/PRIVACY.md">Privacy</a>
         <a href="https://github.com/qtremors/filion/blob/main/LICENSE.md">MIT License</a>
       </div>
     </div>

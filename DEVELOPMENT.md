@@ -48,15 +48,13 @@ This keeps model loading compatible with Android document providers. Do not repl
 3. The app scans that tree for GLB files.
 4. Removing a folder deletes the saved URI and releases the grant when Android permits it.
 
-Keep scans limited to user-selected folders. The app must not request broad storage access.
+Keep scans tied to the selected folder URIs so saved access and displayed folder names remain stable.
 
 ## Viewer state
 
-`ModelViewerState` holds the active control panel, zoom, light level, and background choice. `ModelViewerScreen` owns the SceneView integration, while `ModelViewerChrome` draws the controls and file actions.
+`ModelViewerState` holds the active control panel, zoom, light level, and background choice. `ModelViewerScreen` owns the SceneView integration, while `ModelViewerChrome` draws the controls, model details, sharing, and open-with actions.
 
-## Privacy rule
-
-The app intentionally has no `android.permission.INTERNET` entry. Do not add network features, analytics, advertising, telemetry, or remote model processing without a clear product decision and a privacy-policy update.
+Keep model loading, gestures, lighting, and file actions independent. A viewer-control change should not alter how the selected URI is resolved or loaded.
 
 ## Tests
 

@@ -1,15 +1,26 @@
 # Filion Changelog
 
 > **Project:** Filion
-> **Version:** 0.0.3
+> **Version:** 0.0.5
 > **Last Updated:** 2026-08-01
 
 ---
 
 ## Unreleased
 
+## [0.0.5] - 2026-08-01
+
+- Linked the README title to the website and made APK downloads clear with consistent wording, icons, and direct release links.
+- Named debug and release APKs with the Filion name and their version.
+- Refocused the website and documentation on opening, organizing, and inspecting GLB models.
+- Separated debug and release installs with distinct package names and app labels.
+- Recreated the Filion SVG as a smooth layered vector that preserves the PNG's shape, depth, gradients, and highlights.
+- Updated the full-color and themed Android icons to match the refined Filion mark.
+- Prepared signed release builds, removed obsolete storage access, and blocked inherited network access.
+
+## [0.0.4] - 2026-08-01
+
 - Simplified the documentation and website so the main features, setup, and privacy details are easier to find.
-- Recreated the Filion SVG as a high-detail vector trace of the original PNG, preserving its shape, depth, shading, and highlights.
 
 ## [0.0.3] - 2026-08-01
 

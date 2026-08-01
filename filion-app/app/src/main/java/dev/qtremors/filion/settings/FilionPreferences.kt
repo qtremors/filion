@@ -2,6 +2,7 @@ package dev.qtremors.filion.settings
 
 import android.content.Context
 import android.net.Uri
+import androidx.core.content.edit
 
 private const val PREFS_NAME = "filion_prefs"
 private const val KEY_FOLDERS = "scanned_folders"
@@ -31,13 +32,13 @@ class FilionPreferences(context: Context) {
     var themeMode: ThemeMode
         get() = ThemeMode.fromStoredValue(preferences.getString(KEY_THEME_MODE, null))
         set(value) {
-            preferences.edit().putString(KEY_THEME_MODE, value.name).apply()
+            preferences.edit { putString(KEY_THEME_MODE, value.name) }
         }
 
     var dynamicColor: Boolean
         get() = preferences.getBoolean(KEY_DYNAMIC_COLOR, true)
         set(value) {
-            preferences.edit().putBoolean(KEY_DYNAMIC_COLOR, value).apply()
+            preferences.edit { putBoolean(KEY_DYNAMIC_COLOR, value) }
         }
 
     fun folders(): List<Uri> = preferences
@@ -60,6 +61,6 @@ class FilionPreferences(context: Context) {
             .orEmpty()
             .toMutableSet()
         change(folders)
-        preferences.edit().putStringSet(KEY_FOLDERS, folders).apply()
+        preferences.edit { putStringSet(KEY_FOLDERS, folders) }
     }
 }

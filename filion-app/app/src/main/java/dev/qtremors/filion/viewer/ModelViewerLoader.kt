@@ -1,7 +1,7 @@
 package dev.qtremors.filion.viewer
 
 import android.content.Context
-import android.net.Uri
+import androidx.core.net.toUri
 import io.github.sceneview.loaders.ModelLoader
 import io.github.sceneview.model.ModelInstance
 import java.io.File
@@ -14,7 +14,7 @@ suspend fun loadSceneViewModelInstance(
     modelLoader: ModelLoader,
     reference: String
 ): ModelInstance {
-    val uri = runCatching { Uri.parse(reference) }.getOrNull()
+    val uri = runCatching { reference.toUri() }.getOrNull()
     if (uri != null && (uri.scheme == "content" || uri.scheme == "android.resource")) {
         val bytes = withContext(Dispatchers.IO) {
             context.contentResolver.openInputStream(uri)?.use { it.readBytes() }

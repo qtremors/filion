@@ -97,9 +97,25 @@ img {
 
 .nav-links a:hover,
 .footer-links a:hover,
-.arrow-link:hover,
 .faq-list a:hover {
   color: var(--text);
+}
+
+.download-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.download-icon {
+  width: 1.15em;
+  height: 1.15em;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .hero {
@@ -173,6 +189,7 @@ h3 {
   min-height: 48px;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   padding: 0 20px;
   border: 1px solid transparent;
   border-radius: 12px;
@@ -274,8 +291,8 @@ h3 {
 }
 
 .feature-grid p,
-.build-grid p,
-.privacy-panel p,
+.library-grid p,
+.viewer-panel p,
 .faq-list p,
 footer p {
   color: var(--muted);
@@ -325,7 +342,7 @@ footer p {
   font-size: 0.92rem;
 }
 
-.privacy-panel {
+.viewer-panel {
   padding: 56px;
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
@@ -335,24 +352,19 @@ footer p {
   background: var(--surface);
 }
 
-.privacy-panel h2 {
+.viewer-panel h2 {
   max-width: 640px;
 }
 
-.privacy-panel p {
+.viewer-panel p {
   max-width: 680px;
 }
 
-.arrow-link {
-  color: var(--accent-2);
-  font-weight: 700;
-}
-
-.privacy-panel dl {
+.viewer-panel dl {
   margin: 0;
 }
 
-.privacy-panel dl div {
+.viewer-panel dl div {
   padding: 17px 0;
   display: flex;
   justify-content: space-between;
@@ -360,33 +372,53 @@ footer p {
   border-bottom: 1px solid var(--line);
 }
 
-.privacy-panel dt {
+.viewer-panel dt {
   color: var(--muted);
 }
 
-.privacy-panel dd {
+.viewer-panel dd {
   margin: 0;
   color: var(--accent-2);
   font-weight: 700;
   text-align: right;
 }
 
-.build-grid {
+.library-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(360px, 0.8fr);
   align-items: center;
   gap: 72px;
 }
 
-pre {
+.model-facts {
   margin: 0;
-  padding: 28px;
-  overflow-x: auto;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: #0a0b0e;
-  color: #d8daf0;
-  font: 0.9rem/1.8 ui-monospace, SFMono-Regular, Consolas, monospace;
+  background: var(--surface-2);
+  list-style: none;
+}
+
+.model-facts li {
+  padding: 18px 22px;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.model-facts li:last-child {
+  border-bottom: 0;
+}
+
+.model-facts strong {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.model-facts span {
+  font-weight: 700;
+  text-align: right;
 }
 
 .faq {
@@ -462,8 +494,8 @@ footer p {
     width: min(100%, 520px);
   }
 
-  .privacy-panel,
-  .build-grid {
+  .viewer-panel,
+  .library-grid {
     grid-template-columns: 1fr;
     gap: 38px;
   }
@@ -511,21 +543,21 @@ footer p {
     padding: 26px;
   }
 
-  .privacy-panel {
+  .viewer-panel {
     padding: 28px;
   }
 
-  .privacy-panel dl div {
+  .viewer-panel dl div {
     align-items: flex-start;
     flex-direction: column;
     gap: 2px;
   }
 
-  .privacy-panel dd {
+  .viewer-panel dd {
     text-align: left;
   }
 
-  .build-grid {
+  .library-grid {
     gap: 30px;
   }
 
