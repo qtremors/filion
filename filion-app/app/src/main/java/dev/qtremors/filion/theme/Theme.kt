@@ -8,7 +8,6 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
@@ -27,7 +26,6 @@ private val LightColorScheme = lightColorScheme(
 fun FilionTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
-    flexSettings: GSFlexSettings = GSFlexSettings(preset = GSFlexPreset.EXPRESSIVE),
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -39,13 +37,9 @@ fun FilionTheme(
         else -> LightColorScheme
     }
 
-    val currentTypography = remember(flexSettings) {
-        VariableFontFactory.createTypography(flexSettings)
-    }
-
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = currentTypography,
+        typography = Typography,
         content = content
     )
 }

@@ -1,10 +1,17 @@
 # Filion Changelog
 
 > **Project:** Filion
-> **Version:** 0.0.1
-> **Last Updated:** 2026-07-12
+> **Version:** 0.0.2
+> **Last Updated:** 2026-08-01
 
 ---
+
+## [0.0.2] - 2026-08-01
+
+- **Settings & About**: Added persistent theme controls, scan-folder management, app information, privacy, support, and offline open-source license details.
+- **Vector Branding**: Rebuilt the Filion mark as an editable SVG with full-color and dedicated monochrome Android launcher vectors.
+- **System Typography**: Removed the bundled font and switched the app to Android system typography.
+- **Project Policies**: Added the MIT license, privacy policy, and third-party notices.
 
 ## [0.0.1] - 2026-07-12
 

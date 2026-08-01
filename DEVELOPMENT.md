@@ -2,8 +2,8 @@
 
 > Architecture, implementation notes, conventions, and verification guidance for Filion development.
 
-**Version:** 0.0.1 | **Last Updated:** 2026-07-12
-**Scope:** Internal development, 3D rendering architecture, SAF directory scanning, and testing.
+**Version:** 0.0.2 | **Last Updated:** 2026-08-01
+**Scope:** Internal development, app navigation, settings, 3D rendering, SAF directory scanning, and testing.
 
 ---
 
@@ -25,7 +25,8 @@ Filion is structured as a single-module, lightweight Jetpack Compose application
 
 ```mermaid
 graph TD
-    A["MainActivity<br/>Folder Scans + Main Shell"] -->|renders| B["HomeScreen<br/>Folders List + Discovered Models"]
+    A["MainActivity<br/>Folder Scans + Main Shell"] -->|renders| B["HomeScreen<br/>Discovered Models"]
+    A -->|routes| F["Settings / About / Licenses"]
     A -->|renders| C["ModelViewerScreen<br/>Sceneview Integration"]
     C --> D["ModelViewerLoader<br/>Content Resolver bytes -> ByteBuffer"]
     C --> E["ModelViewerChrome<br/>Top title banner + Bottom controls panel"]
@@ -37,7 +38,8 @@ graph TD
 |----------|-----------|
 | **SAF DocumentTree Scanning** | Bypasses restrictive Scoped Storage limitations. Users choose custom directories (like Downloads/3D), and Filion queries the child documents tree using `DocumentsContract` and `ContentResolver` recursively. |
 | **Stream-to-Buffer Loader** | Content URIs shared by other applications are converted to a raw byte array via `openInputStream` and wrapped in a `ByteBuffer`. This eliminates sceneview URI-resolution errors. |
-| **Variable font typography** | Implements the Google Sans Flex variable font family, generating runtime font weights, widths, and optical sizing dynamically. |
+| **System typography** | Uses the platform font through Material 3 so no font binary or separate font license is bundled. |
+| **Lightweight navigation** | A small destination stack handles Settings, About, and Licenses without introducing a navigation framework. |
 | **No-Internet Policy** | The app request manifest does not include `android.permission.INTERNET` to ensure absolute privacy for local CAD/3D designs. |
 
 ---
@@ -49,11 +51,13 @@ filion/
 ├── filion-app/
 │   ├── app/
 │   │   ├── src/main/java/dev/qtremors/filion/
-│   │   │   ├── MainActivity.kt                  # Entry point, SAF folder persistency, and HomeScreen UI
-│   │   │   ├── theme/                           # Color, Theme, Type, and VariableFontFactory
+│   │   │   ├── MainActivity.kt                  # Entry point, SAF scanner, and destination host
+│   │   │   ├── about/                           # About and offline license presentation
+│   │   │   ├── settings/                        # Settings UI and SharedPreferences wrapper
+│   │   │   ├── theme/                           # Material colors and system typography
 │   │   │   ├── ui/                              # Split buttons, custom menu items, cards, and dialogs
 │   │   │   └── viewer/                          # Sceneview integrations, overlays, state types, and loaders
-│   │   ├── src/main/res/                        # Drawable icons, layout settings, strings, and fonts
+│   │   ├── src/main/res/                        # Vector icons, strings, policies, and license text
 │   │   └── src/test/java/                       # State unit tests
 ```
 
@@ -71,6 +75,7 @@ Filion stores directory permissions persistently:
 4. Child items are scanned using `DocumentsContract.buildChildDocumentsUriUsingTree` with depth limits:
    - Queries `COLUMN_DOCUMENT_ID`, `COLUMN_DISPLAY_NAME`, `COLUMN_MIME_TYPE`, and `COLUMN_SIZE`.
    - Filters for subfolders and `.glb` matches.
+5. Removing a folder deletes the stored URI and releases its persisted read grant when Android allows it.
 
 ---
 
@@ -86,9 +91,9 @@ Filion renders models using Google's Filament:
 ## Theming & M3 Expressive
 
 Expressive styling is defined under `dev.qtremors.filion.theme`:
-- `GSFlexPreset.EXPRESSIVE` builds display typography using extreme axes (`weight = 950f`, `width = 85f`, `roundness = 100f`).
-- `GSFlexPreset.COMPACT` and `GSFlexPreset.NEO` generate standard reading scales.
-- Accent colors fall back to Material 3 dynamic color styling.
+- Typography uses `FontFamily.Default` and Material 3 type sizes.
+- Theme mode persists as system, light, or dark.
+- Dynamic color is available on Android 12 and newer, with the static Filion palette as fallback.
 
 ---
 
@@ -109,5 +114,7 @@ cd filion-app
 
 ## Testing
 
-Unit tests live under `src/test/java/dev/qtremors/filion/viewer/`:
+Unit tests live under `src/test/java/dev/qtremors/filion/`:
 - **ModelViewerStateTest**: Asserts initial viewer state settings and active control drawer toggle logic.
+- **FilionPreferencesTest**: Covers appearance defaults, persistence, fallback behavior, and folder storage.
+- **AppNavigationTest**: Covers destination pushes, duplicate suppression, and back-stack pops.

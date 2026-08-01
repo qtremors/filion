@@ -20,8 +20,63 @@
     <string name="model_viewer_background_white">White</string>
     <string name="model_viewer_background_black">Black</string>
     <string name="ok">OK</string>
-    
+
     <!-- Home/Launcher screen strings -->
     <string name="select_file_hint">Select a 3D model (.glb) to view</string>
     <string name="open_model">Open 3D Model</string>
+    <string name="open_model_description">Browse the system picker for any GLB model</string>
+    <string name="refresh_models">Refresh models</string>
+    <string name="open_settings">Open settings</string>
+    <string name="models_discovered">Models Discovered</string>
+    <string name="no_models_found">No GLB models found</string>
+    <string name="no_models_description">Add a scan folder or open a model directly.</string>
+    <string name="add_scan_folder">Add Scan Folder</string>
+    <string name="folder_permission_failed">Could not save folder access: %1$s</string>
+
+    <!-- Shared navigation -->
+    <string name="back">Back</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_info">Info</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="dynamic_color">Dynamic color</string>
+    <string name="dynamic_color_description">Match colors from your Android wallpaper.</string>
+    <string name="dynamic_color_unavailable">Available on Android 12 and newer.</string>
+    <string name="scan_folders">Scan Folders</string>
+    <string name="add_folder">Add folder</string>
+    <string name="remove_folder">Remove %1$s</string>
+    <string name="no_scan_folders_settings">No scan folders yet. Add a folder to discover GLB models automatically.</string>
+
+    <!-- About -->
+    <string name="about_title">About</string>
+    <string name="about_description">App info, privacy, licenses, and support</string>
+    <string name="about_app_info">App Info</string>
+    <string name="about_privacy_license">Privacy &amp; License</string>
+    <string name="about_support">Changelog &amp; Support</string>
+    <string name="version">Version</string>
+    <string name="developer">Developer</string>
+    <string name="developer_name">Tremors (@qtremors)</string>
+    <string name="website">Website</string>
+    <string name="repository">Repository</string>
+    <string name="device">Device</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="privacy_summary">Offline processing with no ads, analytics, or trackers.</string>
+    <string name="project_license">Project License</string>
+    <string name="mit_license">MIT License</string>
+    <string name="open_source_licenses">Open Source Licenses</string>
+    <string name="open_source_licenses_description">View third-party software and license terms.</string>
+    <string name="view_releases">View Releases</string>
+    <string name="view_releases_description">See downloads and release notes on GitHub.</string>
+    <string name="report_issue">Report an Issue</string>
+    <string name="report_issue_description">Found a problem? Open a GitHub issue.</string>
+
+    <!-- Third-party licenses -->
+    <string name="licenses_notice">Filion is MIT licensed. Its direct runtime libraries remain available under their own Apache License 2.0 terms.</string>
+    <string name="licenses_libraries">Runtime Libraries</string>
+    <string name="show_apache_license">Read Apache License 2.0</string>
+    <string name="hide_apache_license">Hide Apache License 2.0</string>
 </resources>
