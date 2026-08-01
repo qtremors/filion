@@ -2,8 +2,8 @@
 
 > Architecture, implementation notes, conventions, and verification guidance for Filion development.
 
-**Version:** 0.0.2 | **Last Updated:** 2026-08-01
-**Scope:** Internal development, app navigation, settings, 3D rendering, SAF directory scanning, and testing.
+**Version:** 0.0.3 | **Last Updated:** 2026-08-01
+**Scope:** Internal development, app navigation, settings, 3D rendering, SAF directory scanning, documentation, and testing.
 
 ---
 
@@ -15,6 +15,7 @@
 - [3D Rendering Engine](#3d-rendering-engine)
 - [Theming & M3 Expressive](#theming--m3-expressive)
 - [Build & Run](#build--run)
+- [Documentation Website](#documentation-website)
 - [Testing](#testing)
 
 ---
@@ -109,6 +110,14 @@ cd filion-app
 ```bash
 ./gradlew testDebugUnitTest
 ```
+
+---
+
+## Documentation Website
+
+The GitHub Pages site is a dependency-free static application under `docs/`. It uses the system font stack and the deployable `docs/assets/Filion.svg` copy of the canonical mark. Keep the site version synchronized with the Android app and repository badges.
+
+Before publishing, check `scripts.js` with Node, confirm every fragment link has a matching element ID, and verify the page contains no external font or raster-logo dependency. GitHub statistics enhance the page when the public API is available; static labels and release links are the intentional fallback.
 
 ---
 

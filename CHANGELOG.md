@@ -1,10 +1,15 @@
 # Filion Changelog
 
 > **Project:** Filion
-> **Version:** 0.0.2
+> **Version:** 0.0.3
 > **Last Updated:** 2026-08-01
 
 ---
+
+## [0.0.3] - 2026-08-01
+
+- **Documentation Website**: Added a responsive GitHub Pages guide covering setup, controls, folder scanning, privacy, technology, downloads, and FAQs.
+- **Accessible Navigation**: Added keyboard-friendly mobile navigation and FAQ controls, reduced-motion support, and graceful GitHub API fallbacks.
 
 ## [0.0.2] - 2026-08-01
 

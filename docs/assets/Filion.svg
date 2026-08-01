@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500" role="img" aria-labelledby="title description">
+  <title id="title">Filion logo</title>
+  <desc id="description">A dimensional white letter F surrounding a teal cube inside an open purple and blue hexagonal frame.</desc>
+  <defs>
+    <linearGradient id="frameShadow" x1="90" y1="105" x2="405" y2="410" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#173fb7"/>
+      <stop offset="0.5" stop-color="#3d1492"/>
+      <stop offset="1" stop-color="#6514a2"/>
+    </linearGradient>
+    <linearGradient id="frame" x1="96" y1="390" x2="382" y2="104" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#087dff"/>
+      <stop offset="0.24" stop-color="#285eea"/>
+      <stop offset="0.62" stop-color="#9058f7"/>
+      <stop offset="1" stop-color="#cf57e4"/>
+    </linearGradient>
+    <linearGradient id="cavity" x1="155" y1="168" x2="344" y2="352" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#102052"/>
+      <stop offset="1" stop-color="#07112f"/>
+    </linearGradient>
+    <linearGradient id="cubeTop" x1="215" y1="198" x2="322" y2="254" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#58ffe4"/>
+      <stop offset="1" stop-color="#12cfc4"/>
+    </linearGradient>
+    <linearGradient id="cubeLeft" x1="205" y1="230" x2="270" y2="336" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#10c5ca"/>
+      <stop offset="1" stop-color="#008a9a"/>
+    </linearGradient>
+    <linearGradient id="cubeRight" x1="270" y1="245" x2="331" y2="320" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#05b7a9"/>
+      <stop offset="1" stop-color="#007f85"/>
+    </linearGradient>
+    <linearGradient id="letterSide" x1="174" y1="165" x2="268" y2="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#e8e9f4"/>
+      <stop offset="1" stop-color="#aeb6d1"/>
+    </linearGradient>
+    <linearGradient id="letter" x1="175" y1="176" x2="285" y2="327" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f0f1f8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Dark lower/right extrusion beneath the open frame. -->
+  <path d="M252 77 L376 149 M402 244 L402 337 L252 417 L109 335 L109 170 L252 87"
+        fill="none" stroke="url(#frameShadow)" stroke-width="62" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Inner viewer cavity. -->
+  <path d="M250 111 L371 181 L371 321 L250 391 L129 321 L129 181 Z" fill="url(#cavity)"/>
+  <path d="M250 130 L352 189 L352 313 L250 372 L148 313 L148 189 Z"
+        fill="none" stroke="#2442a0" stroke-opacity="0.42" stroke-width="5"/>
+
+  <!-- Main purple-to-blue open hexagonal frame. -->
+  <path d="M250 63 L383 140 M397 239 L397 344 L250 429 L103 344 L103 174 L250 89"
+        fill="none" stroke="url(#frame)" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M250 72 L374 144" fill="none" stroke="#ef91ff" stroke-opacity="0.52" stroke-width="4" stroke-linecap="round"/>
+  <path d="M105 178 L105 337" fill="none" stroke="#71c8ff" stroke-opacity="0.45" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Isometric teal cube. -->
+  <path d="M270 190 L332 226 L270 262 L208 226 Z" fill="url(#cubeTop)"/>
+  <path d="M208 226 L270 262 L270 337 L208 301 Z" fill="url(#cubeLeft)"/>
+  <path d="M270 262 L332 226 L332 301 L270 337 Z" fill="url(#cubeRight)"/>
+  <path d="M270 198 L322 228" fill="none" stroke="#8bfff0" stroke-opacity="0.55" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Dimensional F side and face. -->
+  <path d="M298 164 L209 216 Q196 224 196 240 L196 350 M196 288 L255 254"
+        fill="none" stroke="#7d86ad" stroke-opacity="0.55" stroke-width="41" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M290 156 L201 208 Q188 216 188 232 L188 342 M188 280 L247 246"
+        fill="none" stroke="url(#letterSide)" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M285 151 L196 203 Q183 211 183 227 L183 337 M183 275 L242 241"
+        fill="none" stroke="url(#letter)" stroke-width="31" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M278 151 L198 198" fill="none" stroke="#ffffff" stroke-opacity="0.76" stroke-width="4" stroke-linecap="round"/>
+</svg>

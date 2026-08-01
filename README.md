@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-0.0.2-blueviolet" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.0.3-blueviolet" alt="Version">
   <img src="https://img.shields.io/badge/Kotlin-2.2.10-7F52FF?logo=kotlin" alt="Kotlin">
   <img src="https://img.shields.io/badge/Compose_BOM-2026.05.00-4285F4?logo=jetpackcompose" alt="Compose BOM">
   <img src="https://img.shields.io/badge/Android-10%2B-34A853?logo=android" alt="Android 10+">
@@ -18,6 +18,8 @@
 
 > [!NOTE]
 > **Privacy Model** Filion does not request `android.permission.INTERNET`. It is fully offline and local.
+
+Read the complete [Filion documentation website](https://qtremors.github.io/filion/) for setup, viewer controls, folder scanning, privacy, and FAQs.
 
 ---
 
@@ -76,7 +78,7 @@ Run Gradle commands from `filion-app/` (`gradlew.bat` may be used instead of `./
 
 Release output:
 ```text
-app/build/outputs/apk/release/Filion-0.0.2.apk
+app/build/outputs/apk/release/Filion-0.0.3.apk
 ```
 
 Install the debug build on a connected device:
@@ -106,6 +108,11 @@ filion/
 │   ├── gradlew.bat
 │   ├── gradle.properties
 │   └── settings.gradle.kts
+├── docs/                                         # Static GitHub Pages documentation website
+│   ├── assets/Filion.svg                         # Deployable copy of the canonical vector logo
+│   ├── index.html
+│   ├── scripts.js
+│   └── styles.css
 ├── CHANGELOG.md                                 # Stable release changelog
 ├── DEVELOPMENT.md                               # Architecture & development guide
 ├── LICENSE.md                                   # MIT project license
