@@ -2,52 +2,30 @@
 
 **Effective date:** August 1, 2026
 
-Filion is an offline Android 3D model viewer. The app does not declare the
-Android `INTERNET` permission and cannot directly send model files, usage data,
-or diagnostics over the network.
+Filion is an offline Android app. It does not request Android's `INTERNET` permission, so it cannot send your models, usage data, or diagnostics over the internet.
 
-## Information Filion accesses
+## Files and folders
 
-Filion accesses only files and folders that you explicitly choose through the
-Android system picker or open from another app. It reads GLB model content and
-basic metadata such as the display name, size, MIME type, and local document
-reference so it can render and describe the model on your device.
+Filion reads only models and folders you open or choose through Android's system pickers, plus files you open from another app. It reads the model and basic details such as its name, size, file type, and local document reference.
 
-When you add a scan folder, Android grants Filion persistent read access to
-that folder. Filion stores the folder's document URI in private app preferences
-and scans it locally for GLB files. Removing the folder in Settings removes the
-saved reference and asks Android to release the persisted permission.
+When you add a scan folder, Android gives Filion read access to that folder. Filion saves the folder reference in its private settings and scans it locally for GLB files. Removing the folder from Settings removes the saved reference and asks Android to release access.
 
-## Data collection and sharing
+## Data collection
 
-Filion contains no advertising, analytics, telemetry, tracking SDKs, accounts,
-or remote services. Filion does not collect, sell, or share personal data.
+Filion has no ads, analytics, telemetry, tracking SDKs, accounts, or remote services. It does not collect, sell, or share personal data.
 
-The Share and Open With actions transfer a model only after you request the
-action and choose another installed app. Links in About open your chosen web
-browser; the browser and destination website operate under their own privacy
-policies.
+Sharing a model or choosing Open With sends that model to another installed app only after you request it. Links in the About screen open in your browser; the browser and destination site have their own privacy policies.
 
 ## Settings and Android backup
 
-Theme preferences and selected folder references are stored locally in Android
-SharedPreferences. Depending on your device and Android backup settings, the
-operating system may include these preferences in encrypted cloud backup or
-device-to-device transfer. Filion does not initiate or control that transfer,
-and model file contents are not copied into Filion's preferences.
+Filion stores your theme choice and selected folder references in private app settings. Android may include those settings in encrypted backup or device transfer, depending on your device settings. Filion does not control that process, and model files are not stored in its settings.
 
-You can clear Filion's local settings by clearing app data or uninstalling the
-app. Folder access can also be removed individually from Filion Settings.
+You can remove local settings by clearing app data or uninstalling Filion. You can remove individual folder grants in Filion Settings.
 
-## Documentation website
+## Website
 
-The Filion website is a static GitHub Pages site. It has no advertising,
-analytics, cookies, accounts, or custom tracking. It may request public release
-statistics from GitHub's API, so visiting the site can send ordinary network
-information such as your IP address and browser details to GitHub under
-GitHub's privacy terms.
+The Filion website is a static GitHub Pages site with no ads, analytics, cookies, accounts, or custom tracking. GitHub processes normal web requests under its own privacy terms.
 
-## Changes and contact
+## Contact
 
-Material changes will be recorded in the repository. Questions and privacy
-concerns can be submitted at <https://github.com/qtremors/filion/issues>.
+Privacy questions can be submitted through [GitHub Issues](https://github.com/qtremors/filion/issues). Material changes to this policy will be recorded in the repository.

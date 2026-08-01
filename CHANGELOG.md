@@ -6,6 +6,11 @@
 
 ---
 
+## Unreleased
+
+- Simplified the documentation and website so the main features, setup, and privacy details are easier to find.
+- Recreated the Filion SVG as a high-detail vector trace of the original PNG, preserving its shape, depth, shading, and highlights.
+
 ## [0.0.3] - 2026-08-01
 
 - **Documentation Website**: Added a responsive GitHub Pages guide covering setup, controls, folder scanning, privacy, technology, downloads, and FAQs.

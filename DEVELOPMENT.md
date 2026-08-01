@@ -1,129 +1,82 @@
-# Filion - Developer Documentation
+# Developing Filion
 
-> Architecture, implementation notes, conventions, and verification guidance for Filion development.
+Filion is a single-module Android app written in Kotlin and Jetpack Compose. Filament and SceneView handle GLB rendering.
 
-**Version:** 0.0.3 | **Last Updated:** 2026-08-01
-**Scope:** Internal development, app navigation, settings, 3D rendering, SAF directory scanning, documentation, and testing.
+## Requirements
 
----
+- Android Studio with JDK 11 or newer
+- Android SDK 37
+- An Android 10+ device or emulator
 
-## Table of Contents
+## Build and test
 
-- [Architecture Overview](#architecture-overview)
-- [Project Structure](#project-structure)
-- [Scan Folders Pipeline](#scan-folders-pipeline)
-- [3D Rendering Engine](#3d-rendering-engine)
-- [Theming & M3 Expressive](#theming--m3-expressive)
-- [Build & Run](#build--run)
-- [Documentation Website](#documentation-website)
-- [Testing](#testing)
+Run commands from `filion-app/`:
 
----
-
-## Architecture Overview
-
-Filion is structured as a single-module, lightweight Jetpack Compose application designed to load 3D GLB models.
-
-```mermaid
-graph TD
-    A["MainActivity<br/>Folder Scans + Main Shell"] -->|renders| B["HomeScreen<br/>Discovered Models"]
-    A -->|routes| F["Settings / About / Licenses"]
-    A -->|renders| C["ModelViewerScreen<br/>Sceneview Integration"]
-    C --> D["ModelViewerLoader<br/>Content Resolver bytes -> ByteBuffer"]
-    C --> E["ModelViewerChrome<br/>Top title banner + Bottom controls panel"]
+```bash
+./gradlew :app:assembleDebug
+./gradlew :app:testDebugUnitTest
 ```
 
-### Key Architectural Decisions
+On Windows, use `gradlew.bat`.
 
-| Decision | Rationale |
-|----------|-----------|
-| **SAF DocumentTree Scanning** | Bypasses restrictive Scoped Storage limitations. Users choose custom directories (like Downloads/3D), and Filion queries the child documents tree using `DocumentsContract` and `ContentResolver` recursively. |
-| **Stream-to-Buffer Loader** | Content URIs shared by other applications are converted to a raw byte array via `openInputStream` and wrapped in a `ByteBuffer`. This eliminates sceneview URI-resolution errors. |
-| **System typography** | Uses the platform font through Material 3 so no font binary or separate font license is bundled. |
-| **Lightweight navigation** | A small destination stack handles Settings, About, and Licenses without introducing a navigation framework. |
-| **No-Internet Policy** | The app request manifest does not include `android.permission.INTERNET` to ensure absolute privacy for local CAD/3D designs. |
-
----
-
-## Project Structure
+## Project layout
 
 ```text
-filion/
-├── filion-app/
-│   ├── app/
-│   │   ├── src/main/java/dev/qtremors/filion/
-│   │   │   ├── MainActivity.kt                  # Entry point, SAF scanner, and destination host
-│   │   │   ├── about/                           # About and offline license presentation
-│   │   │   ├── settings/                        # Settings UI and SharedPreferences wrapper
-│   │   │   ├── theme/                           # Material colors and system typography
-│   │   │   ├── ui/                              # Split buttons, custom menu items, cards, and dialogs
-│   │   │   └── viewer/                          # Sceneview integrations, overlays, state types, and loaders
-│   │   ├── src/main/res/                        # Vector icons, strings, policies, and license text
-│   │   └── src/test/java/                       # State unit tests
+filion-app/app/src/main/
+├── java/dev/qtremors/filion/
+│   ├── MainActivity.kt       App shell, file opening, sharing, and folder scans
+│   ├── about/                About and license screens
+│   ├── settings/             Settings UI and saved preferences
+│   ├── theme/                Compose theme
+│   ├── ui/                   Shared UI components
+│   └── viewer/               Model loading, rendering, state, and controls
+└── res/                      Strings, icons, themes, and bundled license text
 ```
 
----
+The static website lives in `docs/`.
 
-## Scan Folders Pipeline
+## How models are opened
 
-Filion stores directory permissions persistently:
-1. User selects a folder tree using `OpenDocumentTree()`.
-2. Persistable read permissions are acquired:
-   ```kotlin
-   contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-   ```
-3. Folder URI references are saved in `SharedPreferences`.
-4. Child items are scanned using `DocumentsContract.buildChildDocumentsUriUsingTree` with depth limits:
-   - Queries `COLUMN_DOCUMENT_ID`, `COLUMN_DISPLAY_NAME`, `COLUMN_MIME_TYPE`, and `COLUMN_SIZE`.
-   - Filters for subfolders and `.glb` matches.
-5. Removing a folder deletes the stored URI and releases its persisted read grant when Android allows it.
+Filion accepts a GLB through its file picker or an Android `ACTION_VIEW` intent. The app reads the selected content URI through `ContentResolver`, copies the bytes into a `ByteBuffer`, and passes the buffer to SceneView.
 
----
+This keeps model loading compatible with Android document providers. Do not replace content URI handling with direct file paths.
 
-## 3D Rendering Engine
+## How folder scans work
 
-Filion renders models using Google's Filament:
-- **Renderer**: `SceneView` Composable node.
-- **Lighting**: Direct main lighting (10,000 intensity) and fill light (3,000 intensity) multiplied by the user's brightness slider state.
-- **Node Scaling**: Modulates scale matrices on gesture listeners Confirmed taps hide overlay UI chrome.
+1. The user chooses a folder with Android's system folder picker.
+2. Filion saves the read grant and folder URI.
+3. The app scans that tree for GLB files.
+4. Removing a folder deletes the saved URI and releases the grant when Android permits it.
 
----
+Keep scans limited to user-selected folders. The app must not request broad storage access.
 
-## Theming & M3 Expressive
+## Viewer state
 
-Expressive styling is defined under `dev.qtremors.filion.theme`:
-- Typography uses `FontFamily.Default` and Material 3 type sizes.
-- Theme mode persists as system, light, or dark.
-- Dynamic color is available on Android 12 and newer, with the static Filion palette as fallback.
+`ModelViewerState` holds the active control panel, zoom, light level, and background choice. `ModelViewerScreen` owns the SceneView integration, while `ModelViewerChrome` draws the controls and file actions.
 
----
+## Privacy rule
 
-## Build & Run
+The app intentionally has no `android.permission.INTERNET` entry. Do not add network features, analytics, advertising, telemetry, or remote model processing without a clear product decision and a privacy-policy update.
 
-### Debug Build
-```bash
-cd filion-app
-./gradlew assembleDebug
+## Tests
+
+Unit tests cover navigation, preferences, and viewer state under:
+
+```text
+filion-app/app/src/test/java/dev/qtremors/filion/
 ```
 
-### Run Tests
-```bash
-./gradlew testDebugUnitTest
+Before submitting a change, run the unit tests and the narrowest relevant Android build task.
+
+## Website
+
+The GitHub Pages site is plain HTML and CSS:
+
+```text
+docs/
+├── assets/Filion.svg
+├── index.html
+└── styles.css
 ```
 
----
-
-## Documentation Website
-
-The GitHub Pages site is a dependency-free static application under `docs/`. It uses the system font stack and the deployable `docs/assets/Filion.svg` copy of the canonical mark. Keep the site version synchronized with the Android app and repository badges.
-
-Before publishing, check `scripts.js` with Node, confirm every fragment link has a matching element ID, and verify the page contains no external font or raster-logo dependency. GitHub statistics enhance the page when the public API is available; static labels and release links are the intentional fallback.
-
----
-
-## Testing
-
-Unit tests live under `src/test/java/dev/qtremors/filion/`:
-- **ModelViewerStateTest**: Asserts initial viewer state settings and active control drawer toggle logic.
-- **FilionPreferencesTest**: Covers appearance defaults, persistence, fallback behavior, and folder storage.
-- **AppNavigationTest**: Covers destination pushes, duplicate suppression, and back-stack pops.
+Keep the site copy short, keep the logo copy in sync with `assets/Filion.svg`, and test it at desktop and mobile widths before publishing.

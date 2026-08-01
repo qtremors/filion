@@ -1,133 +1,56 @@
 <p align="center">
-  <img src="assets/Filion.svg" alt="Filion Logo" width="120"/>
+  <img src="assets/Filion.svg" alt="Filion" width="128">
 </p>
 
 <h1 align="center">Filion</h1>
 
-<p align="center">
-  A Private & Modern 3D viewer app for Android built with Material 3 Expressive.
-</p>
+<p align="center">A private, offline GLB viewer for Android.</p>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Version-0.0.3-blueviolet" alt="Version">
-  <img src="https://img.shields.io/badge/Kotlin-2.2.10-7F52FF?logo=kotlin" alt="Kotlin">
-  <img src="https://img.shields.io/badge/Compose_BOM-2026.05.00-4285F4?logo=jetpackcompose" alt="Compose BOM">
-  <img src="https://img.shields.io/badge/Android-10%2B-34A853?logo=android" alt="Android 10+">
-  <img src="https://img.shields.io/badge/License-MIT-blue" alt="License">
-</p>
+Filion opens and inspects 3D models without an account, ads, analytics, or internet permission. Files stay on your device unless you choose to share one with another app.
 
-> [!NOTE]
-> **Privacy Model** Filion does not request `android.permission.INTERNET`. It is fully offline and local.
+## What it does
 
-Read the complete [Filion documentation website](https://qtremors.github.io/filion/) for setup, viewer controls, folder scanning, privacy, and FAQs.
+- Opens `.glb` files from Filion, a file manager, or another Android app
+- Rotates, pans, and zooms models with touch controls
+- Adjusts scene brightness and switches between theme, black, and white backgrounds
+- Scans only the folders you choose
+- Shows the model name, size, file type, and local reference
+- Supports system, light, dark, and Android dynamic color themes
 
----
+Filion requires Android 10 or newer.
 
-## Why Filion
+## Install
 
-Filion is a standalone 3D model viewer designed to load and inspect GLB models privately, quickly, and beautifully. It features Material 3 Expressive styling, interactive 3D gestures, and user-selected scan folders that avoid traversing storage every time you want to load a model.
+Download the latest APK from [GitHub Releases](https://github.com/qtremors/filion/releases).
 
----
+## Build
 
-## Features
-
-| Feature | Description |
-|---------|-------------|
-| **Interactive 3D View** | Render GLB (glTF binary) models using Filament and Sceneview with smooth rotation, panning, and zoom gestures. |
-| **Model Controls Drawer** | Adjust camera zoom, lighting brightness, and select background mode (Theme, Black, or White) through a modern controls panel. |
-| **Custom Scan Folders** | Choose custom folders on your device storage to scan. Filion persists folder permissions using the Storage Access Framework (SAF) and lists found models automatically. |
-| **Open Custom Model** | Launch the Android system file explorer picker to select and load any GLB file from custom locations. |
-| **Metadata Inspection** | View model properties, including display name, formatted size in KB/MB, MIME type, and local path reference. |
-| **Intent Viewer Integration** | Launches directly from file managers, download browsers, or messengers when clicking `.glb` files or `model/gltf-binary` contents. |
-| **Settings & About** | Choose system, light, or dark appearance, manage scan folders, and access privacy, releases, support, and license details. |
-| **Material 3 Expressive** | Dynamic color, system typography, custom shapes, segmented viewer controls, and vector adaptive/themed icons. |
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| **Language** | Kotlin 2.2.10 |
-| **Android Gradle Plugin** | 9.2.1 |
-| **UI Framework** | Jetpack Compose BOM 2026.05.00, Material 3 1.5.0-alpha19 |
-| **3D Rendering Engine** | Google Filament 1.72.0, Sceneview 4.18.0 |
-| **Persistence** | SharedPreferences for storing user-chosen scanner folders |
-| **Android Support** | Android 10 or newer (Min SDK 30) |
-
----
-
-## Quick Start
-
-Download the latest APK from the releases folder or build it directly from source.
-
-### Build Commands
-
-Run Gradle commands from `filion-app/` (`gradlew.bat` may be used instead of `./gradlew` on Windows):
+Run these commands from `filion-app/`:
 
 ```bash
-# Build the debug APK
 ./gradlew :app:assembleDebug
-
-# Run unit tests
 ./gradlew :app:testDebugUnitTest
-
-# Build signed, minified release APK
-./gradlew :app:assembleRelease
 ```
 
-Release output:
-```text
-app/build/outputs/apk/release/Filion-0.0.3.apk
-```
-
-Install the debug build on a connected device:
-```bash
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-```
-
----
-
-## Project Structure
+The debug APK is written to:
 
 ```text
-filion/
-├── filion-app/
-│   ├── app/                                     # App entry point, gradle configurations, and assets
-│   │   ├── src/main/java/dev/qtremors/filion/
-│   │   │   ├── MainActivity.kt                  # Entry point, scanner, and compact destination stack
-│   │   │   ├── about/                           # About and third-party license screens
-│   │   │   ├── settings/                        # Settings UI and persisted preferences
-│   │   │   ├── theme/                           # Material colors and system typography
-│   │   │   ├── ui/                              # Split button, dropdown menu, and helper view components
-│   │   │   └── viewer/                          # Sceneview, ModelViewerScreen, overlay layouts, and loaders
-│   │   ├── src/main/res/                        # Strings, full-color/themed vectors, and license text
-│   │   └── src/test/java/                       # Unit tests for testing viewer UI states
-│   ├── gradle/                                  # Dependency catalog versions
-│   ├── gradlew
-│   ├── gradlew.bat
-│   ├── gradle.properties
-│   └── settings.gradle.kts
-├── docs/                                         # Static GitHub Pages documentation website
-│   ├── assets/Filion.svg                         # Deployable copy of the canonical vector logo
-│   ├── index.html
-│   ├── scripts.js
-│   └── styles.css
-├── CHANGELOG.md                                 # Stable release changelog
-├── DEVELOPMENT.md                               # Architecture & development guide
-├── LICENSE.md                                   # MIT project license
-├── PRIVACY.md                                   # App and website privacy policy
-└── README.md                                    # Main entry point overview
+app/build/outputs/apk/debug/app-debug.apk
 ```
 
----
+On Windows, use `gradlew.bat` instead of `./gradlew`.
+
+## Privacy
+
+Filion does not request Android's `INTERNET` permission. Read the full [privacy policy](PRIVACY.md).
+
+## Project guide
+
+- [Website and user guide](https://qtremors.github.io/filion/)
+- [Development guide](DEVELOPMENT.md)
+- [Changelog](CHANGELOG.md)
+- [Third-party notices](THIRD_PARTY_NOTICES.md)
 
 ## License
 
-MIT — see [LICENSE.md](LICENSE.md). Third-party terms are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
----
-
-<p align="center">
-  Made with ❤️ by <a href="https://github.com/qtremors">Tremors</a>
-</p>
+Filion is available under the [MIT License](LICENSE.md).
