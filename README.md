@@ -5,7 +5,7 @@
 <h1 align="center"><a href="https://qtremors.github.io/filion/">Filion</a></h1>
 
 <p align="center">
-  A private, modern 3D GLB model viewer for Android.
+  A private, modern Android 3D model viewer.
 </p>
 
 <p align="center">
@@ -34,23 +34,20 @@ Filion is an offline Android 3D model viewer built for inspecting GLB models wit
 
 Download the latest APK from [GitHub Releases](https://github.com/qtremors/filion/releases) and install it on a device running Android 10 or newer.
 
-For the best download speed and storage footprint, choose the APK matching your device's CPU architecture:
-- **`Filion-0.0.7-arm64-v8a.apk`**: Recommended for modern 64-bit Android phones and tablets (~12.6 MB).
-- **`Filion-0.0.7-armeabi-v7a.apk`**: 32-bit ARM devices (~11.1 MB).
-- **`Filion-0.0.7-x86_64.apk`**: 64-bit x86 emulators and Chromebooks (~13.1 MB).
-- **`Filion-0.0.7-x86.apk`**: 32-bit x86 emulators (~13.2 MB).
-- **`Filion-0.0.7.apk`**: Universal APK containing all architectures (~31.5 MB).
+Filion uses Android's Storage Access Framework to access chosen folders and scan for GLB models safely.
 
 ## Features
 
 - **Private and offline:** No ads, accounts, trackers, data collection, or internet permission.
-- **3D model inspection:** Rotate, pan, and zoom GLB models with responsive touch gestures.
+- **3D model inspection:** 360-degree free orbit, 2-finger pan, pinch zoom, roll rotation, and double-tap reset.
+- **Auto-rotate screensaver:** Smooth turntable presentation mode with customizable rotation speeds.
+- **Live search and discovery:** Quick search filtering, pull-to-refresh folder rescanning, and grouped model lists.
 - **Lighting and environment:** Adjust scene brightness and switch between theme, dark, and light backgrounds.
 - **Custom folder scans:** Choose folders through Android Storage Access Framework, scan for GLB models recursively, and manage folder grants.
 - **System intent integration:** Open `.glb` files directly from file managers, downloads, or external applications via `ACTION_VIEW` intents.
 - **Model information:** Inspect model file names, byte sizes, MIME types, and document URI references.
 - **Sharing and export:** Share models or open them in other compatible applications without exposing private paths.
-- **Material 3 UI:** Dynamic Material You coloring with system, light, and dark theme support.
+- **Material 3 Expressive UI:** System, Light, Dark, and OLED Pure Black themes with dynamic Material You color matching and fluid spring motion.
 
 ## Community and support
 
@@ -67,7 +64,7 @@ Filion is built by [Tremors](https://github.com/qtremors) with Kotlin and the An
 - [AndroidX](https://developer.android.com/jetpack/androidx), [Jetpack Compose](https://developer.android.com/compose), and [Material 3](https://m3.material.io/)
 - [Kotlin](https://kotlinlang.org/) and [Kotlin Coroutines](https://github.com/Kotlin/kotlinx.coroutines)
 
-The app's **Settings -> About -> Open Source Licenses** screen lists its runtime libraries and their licenses. Third-party notices are documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+The app's **Settings → About → Open Source Licenses** screen lists its runtime libraries and their licenses. Third-party notices are documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## For developers
 

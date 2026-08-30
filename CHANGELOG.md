@@ -1,10 +1,20 @@
 # Filion Changelog
 
 > **Project:** Filion
-> **Version:** 0.0.7
+> **Version:** 0.0.8
 > **Last Updated:** 2026-08-30
 
 ---
+
+## [0.0.8] - 2026-08-30
+
+- Added smooth screensaver auto-rotation turntable mode with custom speed presets (Slow, Smooth, Fast), immersive fullscreen hiding of system bars, and active toolbar indicators.
+- Added full multi-touch 360-degree free viewer controls with 1-finger unconstrained pitch/yaw orbit, 2-finger pan translation, 2-finger pinch zoom, 2-finger roll rotation, and double-tap orientation reset.
+- Redesigned Home Screen with collapsible `LargeTopAppBar`, eliminating static header clipping and providing smooth edge-to-edge list scrolling.
+- Added swipe-to-refresh (`PullToRefreshBox`) to instantly rescan configured directories for newly added GLB models.
+- Upgraded discovered model cards to Material 3 Expressive `SegmentedListItem` groups with tonal 3D icon badges, formatted file sizes, and touch feedback.
+- Integrated live model search filtering with instant query matching, clear action, and clean search results empty states.
+- Created reusable layered `EmptyState` component with responsive action buttons for opening models and configuring scan folders.
 
 ## [0.0.7] - 2026-08-30
 

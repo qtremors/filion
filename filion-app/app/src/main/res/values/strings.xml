@@ -23,6 +23,12 @@
     <string name="model_viewer_background_theme">Theme</string>
     <string name="model_viewer_background_white">White</string>
     <string name="model_viewer_background_black">Black</string>
+    <string name="model_viewer_auto_rotate">Auto-Rotate</string>
+    <string name="model_viewer_auto_rotate_description">Smooth screensaver turntable rotation</string>
+    <string name="model_viewer_reset_view">Reset View</string>
+    <string name="model_viewer_rotation_speed">Rotation Speed</string>
+    <string name="model_viewer_rotation_speed_value">%1$d°/s</string>
+    <string name="model_viewer_multi_touch_hint">Drag to rotate 360° • Pinch to zoom • 2-finger pan &amp; roll • Double tap to reset</string>
 
     <!-- Home screen strings -->
     <string name="open_model">Open 3D Model</string>
@@ -30,9 +36,15 @@
     <string name="refresh_models">Refresh models</string>
     <string name="open_settings">Open settings</string>
     <string name="models_discovered">Models Discovered</string>
+    <string name="models_discovered_count">%1$d Models Discovered</string>
     <string name="no_models_found">No GLB models found</string>
     <string name="no_models_description">Add a scan folder or open a model directly.</string>
     <string name="add_scan_folder">Add Scan Folder</string>
+    <string name="search_models">Search models</string>
+    <string name="search_placeholder">Search GLB models…</string>
+    <string name="clear_search">Clear search</string>
+    <string name="no_search_results">No matching models</string>
+    <string name="no_search_results_description">Try searching for a different keyword or file name.</string>
     <string name="folder_permission_failed">Could not save folder access: %1$s</string>
 
     <!-- Shared navigation -->

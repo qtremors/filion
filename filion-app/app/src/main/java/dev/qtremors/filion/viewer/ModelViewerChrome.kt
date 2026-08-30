@@ -23,20 +23,24 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +55,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.qtremors.filion.R
+import dev.qtremors.filion.theme.bounceClickable
+import dev.qtremors.filion.ui.ExpressiveSwitch
 import dev.qtremors.filion.ui.ViewerDropdownMenuItem
 import dev.qtremors.filion.ui.ViewerSplitButtonGroup
 import dev.qtremors.filion.ui.ViewerToolbarAction
@@ -88,20 +94,20 @@ internal fun ModelViewerTopOverlay(
                     .padding(horizontal = 4.dp)
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .background(Color.Black.copy(alpha = 0.55f))
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
             ) {
                 Text(
                     text = title,
                     color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                     maxLines = 1,
                     overflow = if (marqueeEnabled) TextOverflow.Clip else TextOverflow.Ellipsis,
                     modifier = if (marqueeEnabled) Modifier.basicMarquee() else Modifier
                 )
                 Text(
-                    text = "GLB • ${stringResource(R.string.model_viewer_hint)}",
-                    color = Color.White.copy(alpha = 0.7f),
+                    text = "GLB • ${stringResource(R.string.model_viewer_multi_touch_hint)}",
+                    color = Color.White.copy(alpha = 0.75f),
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
                     overflow = if (marqueeEnabled) TextOverflow.Clip else TextOverflow.Ellipsis,
@@ -117,6 +123,7 @@ internal fun ModelViewerBottomOverlay(
     visible: Boolean,
     state: ModelViewerState,
     onStateChange: (ModelViewerState) -> Unit,
+    onResetView: () -> Unit,
     onShare: () -> Unit,
     onOpenWith: () -> Unit,
     modifier: Modifier = Modifier
@@ -127,30 +134,33 @@ internal fun ModelViewerBottomOverlay(
         exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow)),
         modifier = modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.fillMaxWidth().navigationBarsPadding()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+        ) {
             AnimatedVisibility(
                 visible = state.activeControl != ModelViewerControl.None,
                 enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)),
                 exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow))
             ) {
                 ModelViewerControlDrawer(
-                    activeControl = state.activeControl,
-                    zoomScale = state.zoomScale,
-                    onZoomScaleChange = { onStateChange(state.copy(zoomScale = it)) },
-                    lightBrightness = state.lightBrightness,
-                    onLightBrightnessChange = { onStateChange(state.copy(lightBrightness = it)) },
-                    backgroundMode = state.backgroundMode,
-                    onBackgroundModeChange = { onStateChange(state.copy(backgroundMode = it)) }
+                    state = state,
+                    onStateChange = onStateChange,
+                    onResetView = onResetView
                 )
             }
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 ModelViewerControlButtons(state, onStateChange)
                 Spacer(Modifier.weight(1f))
                 ModelViewerOverflowMenu(
+                    onResetView = onResetView,
                     onInfo = {
                         onStateChange(state.copy(activeControl = ModelViewerControl.None, infoVisible = true))
                     },
@@ -172,15 +182,23 @@ private fun ModelViewerControlButtons(
             ViewerToolbarAction(
                 icon = Icons.Default.ZoomIn,
                 contentDescription = stringResource(R.string.model_viewer_zoom),
-                tint = Color.White,
+                tint = if (state.activeControl == ModelViewerControl.Zoom) MaterialTheme.colorScheme.primary else Color.White,
                 onClick = {
                     onStateChange(state.copy(activeControl = state.activeControl.toggled(ModelViewerControl.Zoom)))
                 }
             ),
             ViewerToolbarAction(
+                icon = Icons.Default.Autorenew,
+                contentDescription = stringResource(R.string.model_viewer_auto_rotate),
+                tint = if (state.autoRotate) MaterialTheme.colorScheme.primary else Color.White,
+                onClick = {
+                    onStateChange(state.copy(activeControl = state.activeControl.toggled(ModelViewerControl.AutoRotate)))
+                }
+            ),
+            ViewerToolbarAction(
                 icon = Icons.Default.WbSunny,
                 contentDescription = stringResource(R.string.model_viewer_brightness),
-                tint = Color.White,
+                tint = if (state.activeControl == ModelViewerControl.Brightness) MaterialTheme.colorScheme.primary else Color.White,
                 onClick = {
                     onStateChange(state.copy(activeControl = state.activeControl.toggled(ModelViewerControl.Brightness)))
                 }
@@ -188,22 +206,23 @@ private fun ModelViewerControlButtons(
             ViewerToolbarAction(
                 icon = Icons.Default.Palette,
                 contentDescription = stringResource(R.string.model_viewer_background),
-                tint = Color.White,
+                tint = if (state.activeControl == ModelViewerControl.Background) MaterialTheme.colorScheme.primary else Color.White,
                 onClick = {
                     onStateChange(state.copy(activeControl = state.activeControl.toggled(ModelViewerControl.Background)))
                 }
             )
         ),
-        containerColor = Color.Black.copy(alpha = 0.5f),
+        containerColor = Color.Black.copy(alpha = 0.55f),
         contentColor = Color.White,
         height = 56.dp,
-        minWidth = 64.dp,
-        iconSize = 28.dp
+        minWidth = 56.dp,
+        iconSize = 26.dp
     )
 }
 
 @Composable
 private fun ModelViewerOverflowMenu(
+    onResetView: () -> Unit,
     onInfo: () -> Unit,
     onOpenWith: () -> Unit,
     onShare: () -> Unit
@@ -213,7 +232,7 @@ private fun ModelViewerOverflowMenu(
         Surface(
             onClick = { menuVisible = true },
             shape = CircleShape,
-            color = Color.Black.copy(alpha = 0.5f),
+            color = Color.Black.copy(alpha = 0.55f),
             modifier = Modifier.size(56.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -230,17 +249,33 @@ private fun ModelViewerOverflowMenu(
             onDismissRequest = { menuVisible = false },
             shape = MaterialTheme.shapes.extraLarge,
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            modifier = Modifier.width(200.dp)
+            modifier = Modifier.width(220.dp)
         ) {
             val menuActions = listOf<@Composable () -> Unit>(
-                { ModelViewerMenuItem(R.string.action_info, Icons.Default.Info) { menuVisible = false; onInfo() } },
+                {
+                    ModelViewerMenuItem(R.string.model_viewer_reset_view, Icons.Default.RestartAlt) {
+                        menuVisible = false
+                        onResetView()
+                    }
+                },
+                {
+                    ModelViewerMenuItem(R.string.action_info, Icons.Default.Info) {
+                        menuVisible = false
+                        onInfo()
+                    }
+                },
                 {
                     ModelViewerMenuItem(R.string.image_gallery_open_with, Icons.AutoMirrored.Filled.OpenInNew) {
                         menuVisible = false
                         onOpenWith()
                     }
                 },
-                { ModelViewerMenuItem(R.string.share, Icons.Default.Share) { menuVisible = false; onShare() } }
+                {
+                    ModelViewerMenuItem(R.string.share, Icons.Default.Share) {
+                        menuVisible = false
+                        onShare()
+                    }
+                }
             )
             menuActions.forEachIndexed { index, action ->
                 val shape = when {
@@ -250,8 +285,11 @@ private fun ModelViewerOverflowMenu(
                     else -> MaterialTheme.shapes.viewerMenuMiddle
                 }
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp)
-                        .clip(shape).background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                        .clip(shape)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                 ) { action() }
             }
         }
@@ -275,62 +313,132 @@ private fun ModelViewerMenuItem(
 
 @Composable
 internal fun ModelViewerControlDrawer(
-    activeControl: ModelViewerControl,
-    zoomScale: Float,
-    onZoomScaleChange: (Float) -> Unit,
-    lightBrightness: Float,
-    onLightBrightnessChange: (Float) -> Unit,
-    backgroundMode: ModelViewerBackground,
-    onBackgroundModeChange: (ModelViewerBackground) -> Unit
+    state: ModelViewerState,
+    onStateChange: (ModelViewerState) -> Unit,
+    onResetView: () -> Unit
 ) {
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = Color.Black.copy(alpha = 0.72f),
+        color = Color.Black.copy(alpha = 0.78f),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            when (activeControl) {
+            when (state.activeControl) {
+                ModelViewerControl.AutoRotate -> {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.model_viewer_auto_rotate),
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Text(
+                                text = stringResource(R.string.model_viewer_auto_rotate_description),
+                                color = Color.White.copy(alpha = 0.7f),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        ExpressiveSwitch(
+                            checked = state.autoRotate,
+                            onCheckedChange = { onStateChange(state.copy(autoRotate = it)) }
+                        )
+                    }
+
+                    if (state.autoRotate) {
+                        DrawerHeader(
+                            title = stringResource(R.string.model_viewer_rotation_speed),
+                            value = stringResource(R.string.model_viewer_rotation_speed_value, state.autoRotateSpeed.roundToInt())
+                        )
+                        Slider(
+                            value = state.autoRotateSpeed,
+                            onValueChange = { onStateChange(state.copy(autoRotateSpeed = it)) },
+                            valueRange = 5f..45f
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf(
+                                "Slow (8°/s)" to 8f,
+                                "Smooth (15°/s)" to 15f,
+                                "Fast (30°/s)" to 30f
+                            ).forEach { (label, speed) ->
+                                val selected = state.autoRotateSpeed.roundToInt() == speed.roundToInt()
+                                Surface(
+                                    onClick = { onStateChange(state.copy(autoRotateSpeed = speed)) },
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (selected) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.12f),
+                                    contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else Color.White,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
                 ModelViewerControl.Zoom -> {
                     DrawerHeader(
                         title = stringResource(R.string.model_viewer_zoom),
-                        value = stringResource(R.string.model_viewer_zoom_value, (zoomScale * 100).roundToInt())
+                        value = stringResource(R.string.model_viewer_zoom_value, (state.zoomScale * 100).roundToInt())
                     )
                     Slider(
-                        value = zoomScale,
-                        onValueChange = onZoomScaleChange,
-                        valueRange = 0.5f..3f
+                        value = state.zoomScale,
+                        onValueChange = { onStateChange(state.copy(zoomScale = it)) },
+                        valueRange = 0.3f..4f
                     )
+                    OutlinedButton(
+                        onClick = onResetView,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .bounceClickable(onClick = onResetView)
+                    ) {
+                        Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.model_viewer_reset_view), color = Color.White)
+                    }
                 }
                 ModelViewerControl.Brightness -> {
                     DrawerHeader(
                         title = stringResource(R.string.model_viewer_brightness),
-                        value = stringResource(R.string.model_viewer_brightness_value, (lightBrightness * 100).roundToInt())
+                        value = stringResource(R.string.model_viewer_brightness_value, (state.lightBrightness * 100).roundToInt())
                     )
                     Slider(
-                        value = lightBrightness,
-                        onValueChange = onLightBrightnessChange,
+                        value = state.lightBrightness,
+                        onValueChange = { onStateChange(state.copy(lightBrightness = it)) },
                         valueRange = 0.35f..2.5f
                     )
                 }
                 ModelViewerControl.Background -> {
                     DrawerHeader(
                         title = stringResource(R.string.model_viewer_background),
-                        value = backgroundMode.label()
+                        value = state.backgroundMode.label()
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        ModelViewerBackground.values().forEach { mode ->
-                            val selected = mode == backgroundMode
+                        ModelViewerBackground.entries.forEach { mode ->
+                            val selected = mode == state.backgroundMode
                             Surface(
-                                onClick = { onBackgroundModeChange(mode) },
+                                onClick = { onStateChange(state.copy(backgroundMode = mode)) },
                                 shape = RoundedCornerShape(16.dp),
                                 color = if (selected) Color.White else Color.White.copy(alpha = 0.12f),
                                 contentColor = if (selected) Color.Black else Color.White,
