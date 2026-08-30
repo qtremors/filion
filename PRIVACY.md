@@ -1,31 +1,40 @@
-# Filion Privacy Policy
+# Privacy Policy for Filion
 
-**Effective date:** August 1, 2026
+**Last Updated:** August 30, 2026
 
-Filion is an offline Android app. It does not request Android's `INTERNET` permission, so it cannot send your models, usage data, or diagnostics over the internet.
+Filion is a personal project built with a privacy-first mindset. This policy explains how the application handles your information.
 
-## Files and folders
+## 1. No Data Collection
 
-Filion reads only models and folders you open or choose through Android's system pickers, plus files you open from another app. It reads the model and basic details such as its name, size, file type, and local document reference.
+Filion **does not collect, store, or transmit** any personal data, usage statistics, or telemetry from your device.
 
-When you add a scan folder, Android gives Filion read access to that folder. Filion saves the folder reference in its private settings and scans it locally for GLB files. Removing the folder from Settings removes the saved reference and asks Android to release access.
+## 2. Offline by Design
 
-## Data collection
+Filion is designed to operate entirely offline. The application does not declare the `android.permission.INTERNET` permission, so Filion cannot upload 3D models, telemetry, or activity data over the network.
 
-Filion has no ads, analytics, telemetry, tracking SDKs, accounts, or remote services. It does not collect, sell, or share personal data.
+## 3. No Advertisements or Trackers
 
-Sharing a model or choosing Open With sends that model to another installed app only after you request it. Links in the About screen open in your browser; the browser and destination site have their own privacy policies.
+The application contains **zero advertisements** and **zero third-party tracking SDKs**.
 
-## Settings and Android backup
+## 4. Local File & Folder Access
 
-Filion stores your theme choice and selected folder references in private app settings. Android may include those settings in encrypted backup or device transfer, depending on your device settings. Filion does not control that process, and model files are not stored in its settings.
+Filion reads only 3D models and folders you explicitly open or choose through Android's system pickers, plus files opened from another app. It reads model bytes locally to render 3D scenes in Filament/SceneView and extracts basic metadata (display name, byte size, and document reference).
 
-You can remove local settings by clearing app data or uninstalling Filion. You can remove individual folder grants in Filion Settings.
+When you add a scan folder, Android grants Filion persistable read access to that folder. Filion stores the folder URI reference in its private preferences to discover GLB files locally. Removing a folder in Settings removes the reference and asks Android to release the permission grant. Files leave Filion only through an action you explicitly initiate, such as sharing or choosing Open With.
 
-## Website
+## 5. Settings and Android Backup
 
-The Filion website is a static GitHub Pages site with no ads, analytics, cookies, accounts, or custom tracking. GitHub processes normal web requests under its own privacy terms.
+Filion stores your appearance preferences (theme mode, dynamic color) and selected scan folder references in private app preferences. Depending on your device settings, Android may include these preferences in system backups. 3D model files are never stored in app settings.
 
-## Contact
+You can remove local preferences by clearing app data or uninstalling Filion.
 
-Privacy questions can be submitted through [GitHub Issues](https://github.com/qtremors/filion/issues). Material changes to this policy will be recorded in the repository.
+## 6. Source Availability
+
+Filion's source code is publicly available for inspection and audit on [GitHub](https://github.com/qtremors/filion).
+
+## 7. Changes to This Policy
+
+This policy may be updated as new features are introduced. However, the core principles (privacy, offline-only operations, and zero data collection) will remain unchanged.
+
+---
+[Back to Home](https://qtremors.github.io/filion/)

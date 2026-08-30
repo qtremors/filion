@@ -1,12 +1,19 @@
 # Filion Changelog
 
 > **Project:** Filion
-> **Version:** 0.0.5
-> **Last Updated:** 2026-08-01
+> **Version:** 0.0.6
+> **Last Updated:** 2026-08-30
 
 ---
 
-## Unreleased
+## [0.0.6] - 2026-08-30
+
+- Added CPU architecture APK splits, reducing ARM64 download and install size by 60% down to ~12.6 MB alongside a universal fallback build.
+- Enabled release R8 minification and resource shrinking with dedicated ProGuard rules for Filament native C++ bindings and SceneView.
+- Upgraded Android build toolchain to AGP 9.3.1, Kotlin 2.4.10, and Jetpack Compose BOM 2026.08.00.
+- Added composite build convention verification for production UI string localization, version catalog integrity, and release metadata.
+- Redesigned documentation website with bespoke 3D spatial styling, live GitHub repository and download statistics, fullscreen mobile navigation, and open-source acknowledgements.
+- Aligned project documentation across README, architecture guides, privacy policy, and third-party notices.
 
 ## [0.0.5] - 2026-08-01
 
@@ -36,7 +43,7 @@
 
 ## [0.0.1] - 2026-07-12
 
-- **Initial Release**: Ported the GLB 3D viewer plugin codebase from Arcile into a standalone 3D model viewer application.
+- **Initial Release**: Initial release of Filion as a standalone 3D model viewer application.
 - **Material 3 Expressive**: Integrated dynamic variable typography using the Google Sans Flex font, supporting custom display presets and premium UI colors.
 - **Robust Model Loading**: Reconfigured the Sceneview loader to parse content URI stream bytes directly into a `ByteBuffer` to avoid URI-resolution errors.
 - **Custom Scanner Folders**: Added the ability to choose custom directories on storage, persist read permissions, and automatically discover GLB model files recursively.
