@@ -1,10 +1,18 @@
 # Filion Changelog
 
 > **Project:** Filion
-> **Version:** 0.0.9
+> **Version:** 0.1.0
 > **Last Updated:** 2026-08-30
 
 ---
+
+## [0.1.0] - 2026-08-30
+
+- Added a horizontal scrolling folder list with interactive filter chips displaying per-folder model counts and quick folder creation.
+- Added one-tap folder filtering to focus on models in a selected directory, with dedicated empty states and a quick reset action.
+- Added a "Recently Opened" horizontal shelf beneath folders for immediate access to recently inspected 3D models.
+- Fixed the Home Screen empty state by suppressing the "Models Discovered" header when no models are scanned.
+- Persisted recently opened GLB files across sessions with automatic deduplication and recency ordering.
 
 ## [0.0.9] - 2026-08-30
 

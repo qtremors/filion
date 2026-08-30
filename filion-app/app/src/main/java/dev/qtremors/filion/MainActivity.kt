@@ -109,6 +109,7 @@ class MainActivity : ComponentActivity() {
         var keepSplashScreen = true
         var preloadedModels by mutableStateOf<List<ModelTarget>>(emptyList())
         var preloadedFolders by mutableStateOf<List<FolderItem>>(emptyList())
+        var preloadedRecents by mutableStateOf<List<ModelTarget>>(emptyList())
 
         lifecycleScope.launch {
             try {
@@ -124,9 +125,13 @@ class MainActivity : ComponentActivity() {
                         val scanDeferred = async(Dispatchers.IO) {
                             scanLocalGlbFiles(applicationContext)
                         }
+                        val recentsDeferred = async(Dispatchers.IO) {
+                            preferences.recentModels()
+                        }
                         themeDeferred.await()
                         preloadedFolders = foldersDeferred.await()
                         preloadedModels = scanDeferred.await()
+                        preloadedRecents = recentsDeferred.await()
                     }
                 }
             } finally {
@@ -150,16 +155,33 @@ class MainActivity : ComponentActivity() {
                 var activeTarget by remember { mutableStateOf<ModelTarget?>(initialTarget) }
                 var localModels by remember { mutableStateOf(preloadedModels) }
                 var savedFolderItems by remember { mutableStateOf(preloadedFolders) }
+                var recentModels by remember { mutableStateOf(preferences.recentModels()) }
                 var destinationStack by remember {
                     mutableStateOf(listOf(AppDestination.HOME))
                 }
 
-                LaunchedEffect(preloadedModels, preloadedFolders) {
+                val openModelTarget: (ModelTarget) -> Unit = { target ->
+                    preferences.addRecentModel(target)
+                    recentModels = preferences.recentModels()
+                    activeTarget = target
+                }
+
+                LaunchedEffect(initialTarget) {
+                    if (initialTarget != null) {
+                        preferences.addRecentModel(initialTarget)
+                        recentModels = preferences.recentModels()
+                    }
+                }
+
+                LaunchedEffect(preloadedModels, preloadedFolders, preloadedRecents) {
                     if (preloadedModels.isNotEmpty()) {
                         localModels = preloadedModels
                     }
                     if (preloadedFolders.isNotEmpty()) {
                         savedFolderItems = preloadedFolders
+                    }
+                    if (preloadedRecents.isNotEmpty()) {
+                        recentModels = preloadedRecents
                     }
                 }
 
@@ -180,7 +202,7 @@ class MainActivity : ComponentActivity() {
                                     mimeType == "application/octet-stream"
                             if (isGlb) {
                                 val sizeBytes = queryColumn(uri, OpenableColumns.SIZE) { cursor, index -> cursor.getLong(index) } ?: 0L
-                                activeTarget = ModelTarget(
+                                val target = ModelTarget(
                                     uri = uri,
                                     displayName = displayName,
                                     mimeType = mimeType,
@@ -188,6 +210,7 @@ class MainActivity : ComponentActivity() {
                                     folderName = "External",
                                     canonicalKey = uri.toString()
                                 )
+                                openModelTarget(target)
                             } else {
                                 showFilionToast(
                                     getString(R.string.cannot_open_file, getString(R.string.unsupported_request))
@@ -201,9 +224,11 @@ class MainActivity : ComponentActivity() {
                     lifecycleScope.launch(Dispatchers.IO) {
                         val folders = loadSavedFolders(context)
                         val files = scanLocalGlbFiles(context)
+                        val recents = preferences.recentModels()
                         withContext(Dispatchers.Main) {
                             savedFolderItems = folders
                             localModels = files
+                            recentModels = recents
                         }
                     }
                 }
@@ -275,13 +300,19 @@ class MainActivity : ComponentActivity() {
                             when (destinationStack.last()) {
                                 AppDestination.HOME -> HomeScreen(
                                     localModels = localModels,
+                                    folders = savedFolderItems,
+                                    recentModels = recentModels,
                                     onSelectFile = { pickerLauncher.launch("*/*") },
-                                    onSelectLocalModel = { activeTarget = it },
+                                    onSelectLocalModel = openModelTarget,
                                     onAddFolder = { folderPickerLauncher.launch(null) },
                                     onOpenSettings = {
                                         destinationStack = destinationStack.push(AppDestination.SETTINGS)
                                     },
-                                    onRefresh = refreshLocalModels
+                                    onRefresh = refreshLocalModels,
+                                    onClearRecentModels = {
+                                        preferences.clearRecentModels()
+                                        recentModels = emptyList()
+                                    }
                                 )
                                 AppDestination.SETTINGS -> SettingsScreen(
                                     themeMode = themeMode,
@@ -533,16 +564,3 @@ private fun scanTreeUri(
     }
 }
 
-data class FolderItem(
-    val uri: Uri,
-    val displayName: String
-)
-
-data class ModelTarget(
-    val uri: Uri,
-    val displayName: String,
-    val mimeType: String,
-    val sizeBytes: Long,
-    val folderName: String = "",
-    val canonicalKey: String = uri.toString()
-)

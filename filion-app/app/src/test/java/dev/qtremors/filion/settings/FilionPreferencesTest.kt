@@ -2,6 +2,7 @@ package dev.qtremors.filion.settings
 
 import android.content.Context
 import android.net.Uri
+import dev.qtremors.filion.ModelTarget
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -112,5 +113,48 @@ class FilionPreferencesTest {
         val folders = preferences.folders()
         assertEquals(1, folders.size)
         assertEquals(parent, folders.first())
+    }
+
+    @Test
+    fun `recent models persist deduplicate update order and clear correctly`() {
+        assertTrue(preferences.recentModels().isEmpty())
+
+        val model1 = ModelTarget(
+            uri = Uri.parse("content://media/external/1"),
+            displayName = "Robot.glb",
+            mimeType = "model/gltf-binary",
+            sizeBytes = 1024L,
+            folderName = "Downloads",
+            canonicalKey = "key-1"
+        )
+        val model2 = ModelTarget(
+            uri = Uri.parse("content://media/external/2"),
+            displayName = "Car.glb",
+            mimeType = "model/gltf-binary",
+            sizeBytes = 2048L,
+            folderName = "Vehicles",
+            canonicalKey = "key-2"
+        )
+
+        preferences.addRecentModel(model1)
+        val recents1 = preferences.recentModels()
+        assertEquals(1, recents1.size)
+        assertEquals("Robot.glb", recents1.first().displayName)
+
+        preferences.addRecentModel(model2)
+        val recents2 = preferences.recentModels()
+        assertEquals(2, recents2.size)
+        assertEquals("Car.glb", recents2[0].displayName)
+        assertEquals("Robot.glb", recents2[1].displayName)
+
+        // Re-adding model1 moves it to the front
+        preferences.addRecentModel(model1)
+        val recents3 = preferences.recentModels()
+        assertEquals(2, recents3.size)
+        assertEquals("Robot.glb", recents3[0].displayName)
+        assertEquals("Car.glb", recents3[1].displayName)
+
+        preferences.clearRecentModels()
+        assertTrue(preferences.recentModels().isEmpty())
     }
 }

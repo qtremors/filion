@@ -3,11 +3,16 @@ package dev.qtremors.filion.settings
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.edit
+import dev.qtremors.filion.ModelTarget
+import org.json.JSONArray
+import org.json.JSONObject
 
 private const val PREFS_NAME = "filion_prefs"
 private const val KEY_FOLDERS = "scanned_folders"
 private const val KEY_THEME_MODE = "theme_mode"
 private const val KEY_DYNAMIC_COLOR = "dynamic_color"
+private const val KEY_RECENT_MODELS = "recent_models"
+private const val MAX_RECENT_MODELS = 15
 
 enum class ThemeMode {
     SYSTEM,
@@ -142,5 +147,57 @@ class FilionPreferences(context: Context) {
             .toMutableSet()
         change(folders)
         preferences.edit { putStringSet(KEY_FOLDERS, folders) }
+    }
+
+    fun recentModels(): List<ModelTarget> {
+        val raw = preferences.getString(KEY_RECENT_MODELS, null) ?: return emptyList()
+        return runCatching {
+            val array = JSONArray(raw)
+            val list = mutableListOf<ModelTarget>()
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val uriStr = obj.optString("uri")
+                if (uriStr.isNotBlank()) {
+                    list.add(
+                        ModelTarget(
+                            uri = Uri.parse(uriStr),
+                            displayName = obj.optString("displayName", "Model.glb"),
+                            mimeType = obj.optString("mimeType", "model/gltf-binary"),
+                            sizeBytes = obj.optLong("sizeBytes", 0L),
+                            folderName = obj.optString("folderName", ""),
+                            canonicalKey = obj.optString("canonicalKey", uriStr),
+                            lastOpenedTimestamp = obj.optLong("lastOpenedTimestamp", 0L)
+                        )
+                    )
+                }
+            }
+            list.distinctBy { it.canonicalKey }
+        }.getOrDefault(emptyList())
+    }
+
+    fun addRecentModel(target: ModelTarget) {
+        val current = recentModels().toMutableList()
+        current.removeAll { it.canonicalKey == target.canonicalKey || it.uri.toString() == target.uri.toString() }
+        val updated = target.copy(lastOpenedTimestamp = System.currentTimeMillis())
+        current.add(0, updated)
+        val trimmed = current.take(MAX_RECENT_MODELS)
+        val array = JSONArray()
+        for (item in trimmed) {
+            val obj = JSONObject().apply {
+                put("uri", item.uri.toString())
+                put("displayName", item.displayName)
+                put("mimeType", item.mimeType)
+                put("sizeBytes", item.sizeBytes)
+                put("folderName", item.folderName)
+                put("canonicalKey", item.canonicalKey)
+                put("lastOpenedTimestamp", item.lastOpenedTimestamp)
+            }
+            array.put(obj)
+        }
+        preferences.edit { putString(KEY_RECENT_MODELS, array.toString()) }
+    }
+
+    fun clearRecentModels() {
+        preferences.edit { remove(KEY_RECENT_MODELS) }
     }
 }

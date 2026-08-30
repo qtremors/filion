@@ -3,9 +3,6 @@
 package dev.qtremors.filion.home
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +21,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,6 +34,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -44,6 +45,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
@@ -79,34 +82,36 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import dev.qtremors.filion.FolderItem
 import dev.qtremors.filion.ModelTarget
 import dev.qtremors.filion.R
 import dev.qtremors.filion.theme.bounceClickable
 import dev.qtremors.filion.theme.expressiveSegmentedShapes
 import dev.qtremors.filion.theme.spacing
 import dev.qtremors.filion.ui.EmptyState
-import dev.qtremors.filion.ui.FilionScreenScaffold
-import dev.qtremors.filion.ui.formatViewerFileSize
-
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import dev.qtremors.filion.ui.FilionFastScrollbar
+import dev.qtremors.filion.ui.FilionScreenScaffold
+import dev.qtremors.filion.ui.FilionSectionHeader
 import dev.qtremors.filion.ui.LazyListScrollbarState
+import dev.qtremors.filion.ui.formatViewerFileSize
 
 @Composable
 fun HomeScreen(
     localModels: List<ModelTarget>,
+    folders: List<FolderItem>,
+    recentModels: List<ModelTarget>,
     onSelectFile: () -> Unit,
     onSelectLocalModel: (ModelTarget) -> Unit,
     onAddFolder: () -> Unit,
     onOpenSettings: () -> Unit,
     onRefresh: () -> Unit,
+    onClearRecentModels: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var isSearchActive by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var isRefreshing by remember { mutableStateOf(false) }
+    var selectedFolderUri by rememberSaveable { mutableStateOf<String?>(null) }
 
     val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
     val scrollbarState = remember(listState) { LazyListScrollbarState(listState) }
@@ -115,11 +120,25 @@ fun HomeScreen(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    val filteredModels = remember(localModels, searchQuery) {
-        if (searchQuery.isBlank()) {
+    val selectedFolderItem = remember(folders, selectedFolderUri) {
+        folders.firstOrNull { it.uri.toString() == selectedFolderUri }
+    }
+
+    val folderFilteredModels = remember(localModels, selectedFolderItem) {
+        if (selectedFolderItem == null) {
             localModels
         } else {
-            localModels.filter {
+            localModels.filter { model ->
+                model.folderName.equals(selectedFolderItem.displayName, ignoreCase = true)
+            }
+        }
+    }
+
+    val displayedModels = remember(folderFilteredModels, searchQuery) {
+        if (searchQuery.isBlank()) {
+            folderFilteredModels
+        } else {
+            folderFilteredModels.filter {
                 it.displayName.contains(searchQuery.trim(), ignoreCase = true) ||
                     it.folderName.contains(searchQuery.trim(), ignoreCase = true)
             }
@@ -190,8 +209,8 @@ fun HomeScreen(
                             IconButton(
                                 onClick = { searchQuery = "" },
                                 modifier = Modifier
-                                    .clip(CircleShape)
-                                    .bounceClickable { searchQuery = "" }
+                                .clip(CircleShape)
+                                .bounceClickable { searchQuery = "" }
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
@@ -337,69 +356,297 @@ fun HomeScreen(
                                 }
                             }
                         }
-                    }
 
-                    // Header row for Discovered Models
-                    item(key = "discovered_models_header") {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 4.dp, bottom = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = if (isSearchActive && searchQuery.isNotBlank()) {
-                                        "${filteredModels.size} matching"
-                                    } else {
-                                        stringResource(R.string.models_discovered)
-                                    },
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-
-                                if (!isSearchActive && localModels.isNotEmpty()) {
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = MaterialTheme.colorScheme.surfaceContainerHigh
+                        // Horizontal Folders Row
+                        if (folders.isNotEmpty() || localModels.isNotEmpty()) {
+                            item(key = "folders_section") {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 8.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 4.dp, bottom = 6.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text(
-                                            text = localModels.size.toString(),
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                        )
+                                        FilionSectionHeader(text = stringResource(R.string.section_folders))
+                                        TextButton(
+                                            onClick = onAddFolder,
+                                            modifier = Modifier.bounceClickable(onClick = onAddFolder)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Add,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(stringResource(R.string.add_folder))
+                                        }
+                                    }
+
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        contentPadding = PaddingValues(vertical = 2.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        item(key = "folder_all") {
+                                            val isAllSelected = selectedFolderUri == null
+                                            FilterChip(
+                                                selected = isAllSelected,
+                                                onClick = { selectedFolderUri = null },
+                                                label = {
+                                                    Text(
+                                                        stringResource(R.string.all_folders),
+                                                        fontWeight = if (isAllSelected) FontWeight.Bold else FontWeight.Normal
+                                                    )
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        imageVector = Icons.Default.FolderOpen,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                },
+                                                trailingIcon = if (localModels.isNotEmpty()) {
+                                                    {
+                                                        Text(
+                                                            text = localModels.size.toString(),
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                } else null,
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                                ),
+                                                shape = RoundedCornerShape(12.dp)
+                                            )
+                                        }
+
+                                        items(folders, key = { it.uri.toString() }) { folder ->
+                                            val isFolderSelected = selectedFolderUri == folder.uri.toString()
+                                            val folderModelCount = localModels.count {
+                                                it.folderName.equals(folder.displayName, ignoreCase = true)
+                                            }
+                                            FilterChip(
+                                                selected = isFolderSelected,
+                                                onClick = {
+                                                    selectedFolderUri = if (isFolderSelected) null else folder.uri.toString()
+                                                },
+                                                label = {
+                                                    Text(
+                                                        text = folder.displayName,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        fontWeight = if (isFolderSelected) FontWeight.Bold else FontWeight.Normal
+                                                    )
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Folder,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                },
+                                                trailingIcon = {
+                                                    Text(
+                                                        text = folderModelCount.toString(),
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                },
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                                ),
+                                                shape = RoundedCornerShape(12.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
+                        }
 
-                            if (!isSearchActive) {
-                                TextButton(
-                                    onClick = onAddFolder,
-                                    modifier = Modifier.bounceClickable(onClick = onAddFolder)
+                        // Recently Opened Shelf
+                        if (recentModels.isNotEmpty()) {
+                            item(key = "recently_opened_section") {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 8.dp)
                                 ) {
-                                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(stringResource(R.string.add_folder))
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 4.dp, bottom = 6.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        FilionSectionHeader(text = stringResource(R.string.recently_opened))
+                                        TextButton(
+                                            onClick = onClearRecentModels,
+                                            modifier = Modifier.bounceClickable(onClick = onClearRecentModels)
+                                        ) {
+                                            Text(stringResource(R.string.clear_recents))
+                                        }
+                                    }
+
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        contentPadding = PaddingValues(vertical = 2.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        items(recentModels, key = { "recent_${it.canonicalKey}" }) { recent ->
+                                            Card(
+                                                shape = RoundedCornerShape(18.dp),
+                                                colors = CardDefaults.cardColors(
+                                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                                ),
+                                                modifier = Modifier
+                                                    .width(180.dp)
+                                                    .bounceClickable { onSelectLocalModel(recent) }
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.padding(14.dp)
+                                                ) {
+                                                    Surface(
+                                                        shape = RoundedCornerShape(12.dp),
+                                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                                        modifier = Modifier.size(40.dp)
+                                                    ) {
+                                                        Box(contentAlignment = Alignment.Center) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.ViewInAr,
+                                                                contentDescription = null,
+                                                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                                modifier = Modifier.size(22.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                    Spacer(modifier = Modifier.height(10.dp))
+                                                    Text(
+                                                        text = recent.displayName,
+                                                        style = MaterialTheme.typography.titleSmall,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    Spacer(modifier = Modifier.height(2.dp))
+                                                    Text(
+                                                        text = if (recent.folderName.isNotBlank()) {
+                                                            "${recent.folderName} • ${formatViewerFileSize(recent.sizeBytes)}"
+                                                        } else {
+                                                            formatViewerFileSize(recent.sizeBytes)
+                                                        },
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
 
-                    // Discovered Models List / Empty State
-                    if (filteredModels.isEmpty()) {
+                    // Header row for Models (only show when there are models or folder/search filter is active)
+                    val showHeader = if (isSearchActive && searchQuery.isNotBlank()) {
+                        true
+                    } else if (selectedFolderItem != null) {
+                        true
+                    } else {
+                        displayedModels.isNotEmpty()
+                    }
+
+                    if (showHeader) {
+                        item(key = "models_header") {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 6.dp, bottom = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = if (isSearchActive && searchQuery.isNotBlank()) {
+                                            "${displayedModels.size} matching"
+                                        } else if (selectedFolderItem != null) {
+                                            stringResource(R.string.models_in_folder, selectedFolderItem.displayName)
+                                        } else {
+                                            stringResource(R.string.models_discovered)
+                                        },
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+
+                                    if (!isSearchActive && displayedModels.isNotEmpty()) {
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = MaterialTheme.colorScheme.surfaceContainerHigh
+                                        ) {
+                                            Text(
+                                                text = displayedModels.size.toString(),
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                if (!isSearchActive && selectedFolderItem != null) {
+                                    TextButton(
+                                        onClick = { selectedFolderUri = null },
+                                        modifier = Modifier.bounceClickable { selectedFolderUri = null }
+                                    ) {
+                                        Text(stringResource(R.string.show_all))
+                                    }
+                                } else if (!isSearchActive && folders.isEmpty()) {
+                                    TextButton(
+                                        onClick = onAddFolder,
+                                        modifier = Modifier.bounceClickable(onClick = onAddFolder)
+                                    ) {
+                                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(stringResource(R.string.add_folder))
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Models List / Empty State
+                    if (displayedModels.isEmpty()) {
                         item(key = "empty_state") {
                             if (isSearchActive && searchQuery.isNotBlank()) {
                                 EmptyState(
                                     icon = Icons.Default.SearchOff,
                                     title = stringResource(R.string.no_search_results),
                                     description = stringResource(R.string.no_search_results_description)
+                                )
+                            } else if (selectedFolderItem != null) {
+                                EmptyState(
+                                    icon = Icons.Default.FolderOpen,
+                                    title = stringResource(R.string.no_models_in_folder),
+                                    description = stringResource(R.string.no_models_in_folder_description),
+                                    actionLabel = stringResource(R.string.show_all),
+                                    onAction = { selectedFolderUri = null }
                                 )
                             } else {
                                 EmptyState(
@@ -415,13 +662,13 @@ fun HomeScreen(
                         }
                     } else {
                         itemsIndexed(
-                            items = filteredModels,
+                            items = displayedModels,
                             key = { _, model -> model.canonicalKey }
                         ) { index, model ->
                             val folderBadge = if (model.folderName.isNotBlank()) "${model.folderName} • " else ""
                             SegmentedListItem(
                                 onClick = { onSelectLocalModel(model) },
-                                shapes = expressiveSegmentedShapes(index = index, count = filteredModels.size),
+                                shapes = expressiveSegmentedShapes(index = index, count = displayedModels.size),
                                 leadingContent = {
                                     Box(
                                         modifier = Modifier.fillMaxHeight(),
@@ -482,14 +729,13 @@ fun HomeScreen(
                 }
             }
 
-            if (filteredModels.size > 8) {
-                val headerOffset = if (isSearchActive) 1 else 2
+            if (displayedModels.size > 8) {
                 FilionFastScrollbar(
                     scrollbarState = scrollbarState,
                     labelForIndex = { itemIndex ->
-                        val modelIndex = (itemIndex - headerOffset).coerceIn(0, filteredModels.lastIndex)
-                        if (filteredModels.isNotEmpty()) {
-                            val firstChar = filteredModels[modelIndex].displayName.trim().firstOrNull()?.uppercaseChar()
+                        val safeIndex = itemIndex.coerceIn(0, displayedModels.lastIndex)
+                        if (displayedModels.isNotEmpty()) {
+                            val firstChar = displayedModels[safeIndex].displayName.trim().firstOrNull()?.uppercaseChar()
                             if (firstChar != null && (firstChar.isLetter() || firstChar.isDigit())) {
                                 firstChar.toString()
                             } else {
@@ -509,3 +755,4 @@ fun HomeScreen(
         }
     }
 }
+

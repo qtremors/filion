@@ -35,6 +35,15 @@
     <string name="open_model_description">Browse the system picker for any GLB model</string>
     <string name="refresh_models">Refresh models</string>
     <string name="open_settings">Open settings</string>
+    <string name="section_folders">Folders</string>
+    <string name="all_folders">All</string>
+    <string name="all_models">All Models</string>
+    <string name="recently_opened">Recently Opened</string>
+    <string name="clear_recents">Clear</string>
+    <string name="models_in_folder">Models in %1$s</string>
+    <string name="no_models_in_folder">No models in this folder</string>
+    <string name="no_models_in_folder_description">Ensure .glb files are located in this folder and pull to refresh.</string>
+    <string name="show_all">Show all</string>
     <string name="models_discovered">Models Discovered</string>
     <string name="models_discovered_count">%1$d Models Discovered</string>
     <string name="no_models_found">No GLB models found</string>
