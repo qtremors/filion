@@ -1,12 +1,55 @@
 # Filion Changelog
 
 > **Project:** Filion
-> **Version:** 0.0.5
-> **Last Updated:** 2026-08-01
+> **Version:** 0.1.0
+> **Last Updated:** 2026-08-30
 
 ---
 
-## Unreleased
+## [0.1.0] - 2026-08-30
+
+- Added a horizontal scrolling folder list with interactive filter chips displaying per-folder model counts and quick folder creation.
+- Added one-tap folder filtering to focus on models in a selected directory, with dedicated empty states and a quick reset action.
+- Added a "Recently Opened" horizontal shelf beneath folders for immediate access to recently inspected 3D models.
+- Fixed the Home Screen empty state by suppressing the "Models Discovered" header when no models are scanned.
+- Persisted recently opened GLB files across sessions with automatic deduplication and recency ordering.
+
+## [0.0.9] - 2026-08-30
+
+- Added asynchronous model and folder preloading during the splash screen, populating models on startup without empty state flickering.
+- Added smooth, responsive cross-screen animations and retained list scroll position when entering and exiting the 3D model viewer.
+- Integrated `FilionFastScrollbar` with spring drag physics, tactile stretch, and dynamic letter/index tooltip for scrubbing large model collections.
+- Refactored model lists to individual lazy-recycled items with containing folder badges and formatted metadata.
+- Added smart folder hierarchy management, automatically pruning redundant subfolders when parent folders are added and preventing duplicate scans.
+- Added canonical document and file path deduplication across storage roots so models never duplicate.
+- Added automatic screen wake lock in the 3D viewer, preventing display timeout during model inspection and screensaver auto-rotation.
+
+## [0.0.8] - 2026-08-30
+
+- Added smooth screensaver auto-rotation turntable mode with custom speed presets (Slow, Smooth, Fast), immersive fullscreen hiding of system bars, and active toolbar indicators.
+- Added full multi-touch 360-degree free viewer controls with 1-finger unconstrained pitch/yaw orbit, 2-finger pan translation, 2-finger pinch zoom, 2-finger roll rotation, and double-tap orientation reset.
+- Redesigned Home Screen with collapsible `LargeTopAppBar`, eliminating static header clipping and providing smooth edge-to-edge list scrolling.
+- Added swipe-to-refresh (`PullToRefreshBox`) to instantly rescan configured directories for newly added GLB models.
+- Upgraded discovered model cards to Material 3 Expressive `SegmentedListItem` groups with tonal 3D icon badges, formatted file sizes, and touch feedback.
+- Integrated live model search filtering with instant query matching, clear action, and clean search results empty states.
+- Created reusable layered `EmptyState` component with responsive action buttons for opening models and configuring scan folders.
+
+## [0.0.7] - 2026-08-30
+
+- Added AndroidX splash screen with smooth startup preload and edge-to-edge system bar integration.
+- Upgraded Settings with Material 3 Expressive layout, interactive 4-mode theme selector (System, Light, Dark, OLED Pure Black), dynamic color toggle, and segmented scan folder cards.
+- Redesigned About page with collapsible top bar, tap-to-copy version and device specifications, and external project links.
+- Updated Open Source Licenses screen with complete runtime library notices and expandable Apache License 2.0 viewer.
+- Added spring motion curves, bounce click interactions, and system reduced-motion support across in-app screens.
+
+## [0.0.6] - 2026-08-30
+
+- Added CPU architecture APK splits, reducing ARM64 download and install size by 60% down to ~12.6 MB alongside a universal fallback build.
+- Enabled release R8 minification and resource shrinking with dedicated ProGuard rules for Filament native C++ bindings and SceneView.
+- Upgraded Android build toolchain to AGP 9.3.1, Kotlin 2.4.10, and Jetpack Compose BOM 2026.08.00.
+- Added composite build convention verification for production UI string localization, version catalog integrity, and release metadata.
+- Redesigned documentation website with bespoke 3D spatial styling, live GitHub repository and download statistics, fullscreen mobile navigation, and open-source acknowledgements.
+- Aligned project documentation across README, architecture guides, privacy policy, and third-party notices.
 
 ## [0.0.5] - 2026-08-01
 
@@ -36,7 +79,7 @@
 
 ## [0.0.1] - 2026-07-12
 
-- **Initial Release**: Ported the GLB 3D viewer plugin codebase from Arcile into a standalone 3D model viewer application.
+- **Initial Release**: Initial release of Filion as a standalone 3D model viewer application.
 - **Material 3 Expressive**: Integrated dynamic variable typography using the Google Sans Flex font, supporting custom display presets and premium UI colors.
 - **Robust Model Loading**: Reconfigured the Sceneview loader to parse content URI stream bytes directly into a `ByteBuffer` to avoid URI-resolution errors.
 - **Custom Scanner Folders**: Added the ability to choose custom directories on storage, persist read permissions, and automatically discover GLB model files recursively.

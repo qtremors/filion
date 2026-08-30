@@ -1,5 +1,7 @@
 package dev.qtremors.filion.viewer
 
+import android.app.Activity
+import android.content.ContextWrapper
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -9,16 +11,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import dev.qtremors.filion.R
 import dev.qtremors.filion.ui.ModelInfoDialog
 import dev.qtremors.filion.ui.ViewerErrorCard
@@ -26,8 +36,12 @@ import dev.qtremors.filion.ui.ViewerStatusCard
 import io.github.sceneview.SceneView
 import io.github.sceneview.SurfaceType
 import io.github.sceneview.math.Position
+import io.github.sceneview.math.Rotation
 import io.github.sceneview.math.Scale
 import io.github.sceneview.model.ModelInstance
+import io.github.sceneview.node.ModelNode
+import io.github.sceneview.node.Node
+import io.github.sceneview.rememberCameraManipulator
 import io.github.sceneview.rememberEngine
 import io.github.sceneview.rememberEnvironment
 import io.github.sceneview.rememberEnvironmentLoader
@@ -36,6 +50,7 @@ import io.github.sceneview.rememberMainLightNode
 import io.github.sceneview.rememberModelLoader
 import io.github.sceneview.rememberOnGestureListener
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.isActive
 
 @Composable
 fun ModelViewerScreen(
@@ -48,6 +63,30 @@ fun ModelViewerScreen(
     onOpenWith: () -> Unit
 ) {
     var viewerState by remember(reference) { mutableStateOf(ModelViewerState()) }
+    var autoRotationAngle by remember(reference) { mutableFloatStateOf(0f) }
+
+    val view = LocalView.current
+    DisposableEffect(view) {
+        view.keepScreenOn = true
+        onDispose {
+            view.keepScreenOn = false
+        }
+    }
+
+    // Smooth turntable rotation loop for screensaver mode
+    LaunchedEffect(viewerState.autoRotate, viewerState.autoRotateSpeed) {
+        if (viewerState.autoRotate) {
+            var lastTime = withFrameNanos { it }
+            while (isActive) {
+                withFrameNanos { currentTime ->
+                    val dt = (currentTime - lastTime) / 1_000_000_000f
+                    lastTime = currentTime
+                    autoRotationAngle = (autoRotationAngle + dt * viewerState.autoRotateSpeed) % 360f
+                }
+            }
+        }
+    }
+
     val animatedZoomScale by animateFloatAsState(
         targetValue = viewerState.zoomScale,
         animationSpec = spring(
@@ -64,6 +103,7 @@ fun ModelViewerScreen(
         ),
         label = "modelLightBrightness"
     )
+
     val engine = rememberEngine()
     val modelLoader = rememberModelLoader(engine)
     val environmentLoader = rememberEnvironmentLoader(engine)
@@ -74,6 +114,7 @@ fun ModelViewerScreen(
     val fillLightNode = rememberFillLightNode(engine) {
         intensity = FILL_LIGHT_INTENSITY * animatedLightBrightness
     }
+    val cameraManipulator = rememberCameraManipulator()
     var modelInstance by remember(reference) { mutableStateOf<ModelInstance?>(null) }
     val modelViewerError = stringResource(R.string.model_viewer_error)
     val backgroundColor = when (viewerState.backgroundMode) {
@@ -86,7 +127,45 @@ fun ModelViewerScreen(
         environment.indirectLight?.intensity = MAIN_LIGHT_INTENSITY * animatedLightBrightness
     }
 
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
+    val activity = remember(context) {
+        generateSequence(context) { if (it is ContextWrapper) it.baseContext else null }
+            .filterIsInstance<Activity>()
+            .firstOrNull()
+    }
+
+    DisposableEffect(activity, viewerState.uiVisible) {
+        val window = activity?.window
+        if (window != null) {
+            val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+            if (!viewerState.uiVisible) {
+                insetsController.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                insetsController.hide(WindowInsetsCompat.Type.systemBars())
+            } else {
+                insetsController.show(WindowInsetsCompat.Type.systemBars())
+            }
+        }
+        onDispose {
+            val window = activity?.window
+            if (window != null) {
+                val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+                insetsController.show(WindowInsetsCompat.Type.systemBars())
+            }
+        }
+    }
+
+    val resetView = {
+        autoRotationAngle = 0f
+        viewerState = viewerState.copy(
+            zoomScale = 1f,
+            rotationX = 0f,
+            rotationY = 0f,
+            rotationZ = 0f,
+            panX = 0f,
+            panY = 0f
+        )
+    }
 
     BackHandler {
         when {
@@ -123,6 +202,7 @@ fun ModelViewerScreen(
                 surfaceType = SurfaceType.TextureSurface,
                 engine = engine,
                 modelLoader = modelLoader,
+                cameraManipulator = cameraManipulator,
                 isOpaque = false,
                 environment = environment,
                 mainLightNode = mainLightNode,
@@ -130,16 +210,22 @@ fun ModelViewerScreen(
                 autoFitContent = true,
                 onGestureListener = rememberOnGestureListener(
                     onSingleTapConfirmed = { _, _ ->
-                        viewerState = if (viewerState.activeControl == ModelViewerControl.None) {
-                            viewerState.copy(uiVisible = !viewerState.uiVisible)
-                        } else {
+                        viewerState = if (viewerState.activeControl != ModelViewerControl.None) {
                             viewerState.copy(activeControl = ModelViewerControl.None)
+                        } else {
+                            viewerState.copy(uiVisible = !viewerState.uiVisible)
                         }
+                    },
+                    onDoubleTap = { _, _ ->
+                        resetView()
                     }
                 )
             ) {
                 modelInstance?.let { instance ->
-                    Node(scale = Scale(animatedZoomScale)) {
+                    Node(
+                        rotation = Rotation(0f, autoRotationAngle, 0f),
+                        scale = Scale(animatedZoomScale)
+                    ) {
                         ModelNode(
                             modelInstance = instance,
                             autoAnimate = true,
@@ -175,6 +261,7 @@ fun ModelViewerScreen(
                 visible = viewerState.uiVisible && !viewerState.infoVisible,
                 state = viewerState,
                 onStateChange = { viewerState = it },
+                onResetView = resetView,
                 onShare = onShare,
                 onOpenWith = onOpenWith,
                 modifier = Modifier.align(Alignment.BottomCenter)

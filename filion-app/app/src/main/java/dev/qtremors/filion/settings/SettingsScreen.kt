@@ -1,47 +1,62 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package dev.qtremors.filion.settings
 
 import android.net.Uri
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
+import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.qtremors.filion.FolderItem
 import dev.qtremors.filion.R
+import dev.qtremors.filion.theme.bounceClickable
+import dev.qtremors.filion.theme.expressiveSegmentedShapes
+import dev.qtremors.filion.theme.spacing
+import dev.qtremors.filion.ui.ExpressiveSwitch
+import dev.qtremors.filion.ui.FilionListSurface
+import dev.qtremors.filion.ui.FilionScreenScaffold
+import dev.qtremors.filion.ui.FilionSectionHeader
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsScreen(
     themeMode: ThemeMode,
@@ -55,14 +70,29 @@ fun SettingsScreen(
     onOpenAbout: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    Scaffold(
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
+    FilionScreenScaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_title)) },
+            LargeTopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.settings_title),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                scrollBehavior = scrollBehavior,
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .bounceClickable(onClick = onNavigateBack)
+                    ) {
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.back)
                         )
                     }
@@ -73,170 +103,185 @@ fun SettingsScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .navigationBarsPadding(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .padding(top = padding.calculateTopPadding())
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(
+                top = 16.dp,
+                bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() +
+                    MaterialTheme.spacing.screenGutter
+            ),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            // Appearance Section
             item {
-                SettingsSection(title = stringResource(R.string.settings_appearance)) {
-                    Column {
-                        ThemeMode.entries.forEachIndexed { index, mode ->
-                            val label = when (mode) {
-                                ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
-                                ThemeMode.LIGHT -> stringResource(R.string.theme_light)
-                                ThemeMode.DARK -> stringResource(R.string.theme_dark)
-                            }
-                            ListItem(
-                                headlineContent = { Text(label) },
-                                leadingContent = {
-                                    Icon(
-                                        Icons.Default.DarkMode,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                },
-                                trailingContent = {
-                                    RadioButton(
-                                        selected = themeMode == mode,
-                                        onClick = { onThemeModeChange(mode) }
-                                    )
-                                },
-                                modifier = Modifier.clickable { onThemeModeChange(mode) }
-                            )
-                            if (index < ThemeMode.entries.lastIndex) HorizontalDivider()
-                        }
-                        HorizontalDivider()
-                        ListItem(
-                            headlineContent = { Text(stringResource(R.string.dynamic_color)) },
-                            supportingContent = {
-                                Text(
-                                    if (dynamicColorAvailable) {
-                                        stringResource(R.string.dynamic_color_description)
-                                    } else {
-                                        stringResource(R.string.dynamic_color_unavailable)
-                                    }
-                                )
-                            },
-                            leadingContent = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FilionSectionHeader(text = stringResource(R.string.section_appearance))
+                    FilionListSurface {
+                        ThemeModeSelector(
+                            currentMode = themeMode,
+                            onModeSelected = onThemeModeChange
+                        )
+                    }
+                    SegmentedListItem(
+                        checked = dynamicColor && dynamicColorAvailable,
+                        onCheckedChange = onDynamicColorChange,
+                        enabled = dynamicColorAvailable,
+                        shapes = expressiveSegmentedShapes(index = 0, count = 1),
+                        leadingContent = {
+                            Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
                                 Icon(
-                                    Icons.Default.Palette,
+                                    imageVector = Icons.Default.Palette,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary
                                 )
-                            },
-                            trailingContent = {
-                                Switch(
-                                    checked = dynamicColor && dynamicColorAvailable,
-                                    enabled = dynamicColorAvailable,
-                                    onCheckedChange = onDynamicColorChange
-                                )
-                            },
-                            modifier = if (dynamicColorAvailable) {
-                                Modifier.clickable { onDynamicColorChange(!dynamicColor) }
-                            } else {
-                                Modifier
                             }
-                        )
-                    }
+                        },
+                        content = { Text(stringResource(R.string.dynamic_color)) },
+                        supportingContent = {
+                            Text(
+                                if (dynamicColorAvailable) {
+                                    stringResource(R.string.dynamic_color_description)
+                                } else {
+                                    stringResource(R.string.dynamic_color_unavailable)
+                                }
+                            )
+                        },
+                        trailingContent = {
+                            Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                ExpressiveSwitch(
+                                    checked = dynamicColor && dynamicColorAvailable,
+                                    onCheckedChange = if (dynamicColorAvailable) onDynamicColorChange else null,
+                                    enabled = dynamicColorAvailable
+                                )
+                            }
+                        },
+                        colors = ListItemDefaults.segmentedColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        modifier = Modifier.height(IntrinsicSize.Min)
+                    )
                 }
             }
 
+            // Scan Folders Section
             item {
-                SettingsSection(
-                    title = stringResource(R.string.scan_folders),
-                    action = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FilionSectionHeader(text = stringResource(R.string.section_scan_folders))
                         TextButton(onClick = onAddFolder) {
                             Icon(Icons.Default.Add, contentDescription = null)
                             Text(stringResource(R.string.add_folder))
                         }
                     }
-                ) {
+
                     if (folders.isEmpty()) {
-                        Text(
-                            text = stringResource(R.string.no_scan_folders_settings),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(16.dp)
+                        SegmentedListItem(
+                            onClick = onAddFolder,
+                            shapes = expressiveSegmentedShapes(index = 0, count = 1),
+                            content = {
+                                Text(
+                                    text = stringResource(R.string.no_scan_folders_settings),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            colors = ListItemDefaults.segmentedColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer
+                            )
                         )
                     } else {
-                        Column {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)
+                        ) {
                             folders.forEachIndexed { index, folder ->
-                                ListItem(
-                                    headlineContent = { Text(folder.displayName) },
-                                    supportingContent = { Text(folder.uri.toString(), maxLines = 1) },
+                                SegmentedListItem(
+                                    onClick = {},
+                                    shapes = expressiveSegmentedShapes(index = index, count = folders.size),
                                     leadingContent = {
-                                        Icon(
-                                            Icons.Default.Folder,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary
+                                        Box(
+                                            modifier = Modifier.fillMaxHeight(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Folder,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    },
+                                    content = { Text(folder.displayName) },
+                                    supportingContent = {
+                                        Text(
+                                            text = folder.uri.toString(),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     },
                                     trailingContent = {
-                                        IconButton(onClick = { onRemoveFolder(folder.uri) }) {
-                                            Icon(
-                                                Icons.Default.Delete,
-                                                contentDescription = stringResource(
-                                                    R.string.remove_folder,
-                                                    folder.displayName
-                                                ),
-                                                tint = MaterialTheme.colorScheme.error
-                                            )
+                                        Box(
+                                            modifier = Modifier.fillMaxHeight(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            IconButton(onClick = { onRemoveFolder(folder.uri) }) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Delete,
+                                                    contentDescription = stringResource(
+                                                        R.string.remove_folder,
+                                                        folder.displayName
+                                                    ),
+                                                    tint = MaterialTheme.colorScheme.error
+                                                )
+                                            }
                                         }
-                                    }
+                                    },
+                                    colors = ListItemDefaults.segmentedColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                    ),
+                                    modifier = Modifier.height(IntrinsicSize.Min)
                                 )
-                                if (index < folders.lastIndex) HorizontalDivider()
                             }
                         }
                     }
                 }
             }
 
+            // Info Section
             item {
-                SettingsSection(title = stringResource(R.string.settings_info)) {
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.about_title)) },
-                        supportingContent = { Text(stringResource(R.string.about_description)) },
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FilionSectionHeader(text = stringResource(R.string.section_info))
+                    SegmentedListItem(
+                        onClick = onOpenAbout,
+                        shapes = expressiveSegmentedShapes(index = 0, count = 1),
                         leadingContent = {
-                            Icon(
-                                Icons.Default.Info,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
+                            Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         },
+                        content = { Text(stringResource(R.string.about_title)) },
+                        supportingContent = { Text(stringResource(R.string.about_description)) },
                         trailingContent = {
-                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                            Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = null
+                                )
+                            }
                         },
-                        modifier = Modifier.clickable(onClick = onOpenAbout)
+                        colors = ListItemDefaults.segmentedColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        modifier = Modifier.height(IntrinsicSize.Min)
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun SettingsSection(
-    title: String,
-    action: @Composable (() -> Unit)? = null,
-    content: @Composable () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
-            action?.invoke()
-        }
-        Card(modifier = Modifier.fillMaxWidth()) {
-            content()
         }
     }
 }
