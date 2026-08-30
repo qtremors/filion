@@ -28,6 +28,63 @@ fun ThemeMode.resolveDarkTheme(systemDark: Boolean): Boolean = when (this) {
     ThemeMode.OLED -> true
 }
 
+enum class FolderAddResult {
+    ADDED,
+    ALREADY_EXISTS,
+    COVERED_BY_PARENT,
+    REPLACED_CHILDREN
+}
+
+fun extractFolderDocId(uri: Uri): String {
+    return runCatching {
+        android.provider.DocumentsContract.getTreeDocumentId(uri)
+    }.getOrNull() ?: uri.path.orEmpty()
+}
+
+fun isSameFolder(uri1: Uri, uri2: Uri): Boolean {
+    if (uri1 == uri2) return true
+    if (uri1.scheme != uri2.scheme || uri1.authority != uri2.authority) return false
+    val doc1 = extractFolderDocId(uri1).trimEnd('/')
+    val doc2 = extractFolderDocId(uri2).trimEnd('/')
+    return doc1.isNotEmpty() && doc1 == doc2
+}
+
+fun isSubfolder(childUri: Uri, parentUri: Uri): Boolean {
+    if (childUri == parentUri) return false
+    if (childUri.scheme != parentUri.scheme) return false
+    if (childUri.authority != parentUri.authority) return false
+
+    if (childUri.scheme == "file") {
+        val childPath = childUri.path?.trimEnd('/') ?: return false
+        val parentPath = parentUri.path?.trimEnd('/') ?: return false
+        return childPath.startsWith("$parentPath/")
+    }
+
+    val childDocId = extractFolderDocId(childUri).trimEnd('/')
+    val parentDocId = extractFolderDocId(parentUri).trimEnd('/')
+
+    if (childDocId.isEmpty() || parentDocId.isEmpty()) return false
+    if (childDocId == parentDocId) return false
+
+    if (parentDocId.endsWith(":")) {
+        return childDocId.startsWith(parentDocId)
+    }
+    return childDocId.startsWith("$parentDocId/") || childDocId.startsWith("$parentDocId:")
+}
+
+fun pruneRedundantFolders(folders: List<Uri>): List<Uri> {
+    val result = mutableListOf<Uri>()
+    for (folder in folders) {
+        val hasAncestor = folders.any { other ->
+            other != folder && isSubfolder(childUri = folder, parentUri = other)
+        }
+        if (!hasAncestor && result.none { isSameFolder(it, folder) }) {
+            result.add(folder)
+        }
+    }
+    return result
+}
+
 class FilionPreferences(context: Context) {
     private val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -47,14 +104,35 @@ class FilionPreferences(context: Context) {
         .getStringSet(KEY_FOLDERS, emptySet())
         .orEmpty()
         .map(Uri::parse)
+        .let(::pruneRedundantFolders)
         .sortedBy(Uri::toString)
 
-    fun addFolder(uri: Uri) {
-        updateFolders { it.add(uri.toString()) }
+    fun addFolder(uri: Uri): FolderAddResult {
+        val current = folders()
+        if (current.any { isSameFolder(it, uri) }) {
+            return FolderAddResult.ALREADY_EXISTS
+        }
+        if (current.any { isSubfolder(childUri = uri, parentUri = it) }) {
+            return FolderAddResult.COVERED_BY_PARENT
+        }
+
+        val subfolders = current.filter { isSubfolder(childUri = it, parentUri = uri) }
+        updateFolders { set ->
+            subfolders.forEach { sub -> set.remove(sub.toString()) }
+            set.add(uri.toString())
+        }
+
+        return if (subfolders.isNotEmpty()) {
+            FolderAddResult.REPLACED_CHILDREN
+        } else {
+            FolderAddResult.ADDED
+        }
     }
 
     fun removeFolder(uri: Uri) {
-        updateFolders { it.remove(uri.toString()) }
+        updateFolders { set ->
+            set.removeAll { stored -> isSameFolder(Uri.parse(stored), uri) }
+        }
     }
 
     private fun updateFolders(change: (MutableSet<String>) -> Unit) {

@@ -1,10 +1,20 @@
 # Filion Changelog
 
 > **Project:** Filion
-> **Version:** 0.0.8
+> **Version:** 0.0.9
 > **Last Updated:** 2026-08-30
 
 ---
+
+## [0.0.9] - 2026-08-30
+
+- Added asynchronous model and folder preloading during the splash screen, populating models on startup without empty state flickering.
+- Added smooth, responsive cross-screen animations and retained list scroll position when entering and exiting the 3D model viewer.
+- Integrated `FilionFastScrollbar` with spring drag physics, tactile stretch, and dynamic letter/index tooltip for scrubbing large model collections.
+- Refactored model lists to individual lazy-recycled items with containing folder badges and formatted metadata.
+- Added smart folder hierarchy management, automatically pruning redundant subfolders when parent folders are added and preventing duplicate scans.
+- Added canonical document and file path deduplication across storage roots so models never duplicate.
+- Added automatic screen wake lock in the 3D viewer, preventing display timeout during model inspection and screensaver auto-rotation.
 
 ## [0.0.8] - 2026-08-30
 

@@ -66,10 +66,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import dev.qtremors.filion.about.AboutScreen
 import dev.qtremors.filion.about.LicensesScreen
 import dev.qtremors.filion.home.HomeScreen
 import dev.qtremors.filion.settings.FilionPreferences
+import dev.qtremors.filion.settings.FolderAddResult
 import dev.qtremors.filion.settings.SettingsScreen
 import dev.qtremors.filion.settings.ThemeMode
 import dev.qtremors.filion.theme.FilionTheme
@@ -77,7 +84,10 @@ import dev.qtremors.filion.theme.bounceClickable
 import dev.qtremors.filion.ui.formatViewerFileSize
 import dev.qtremors.filion.ui.showFilionToast
 import dev.qtremors.filion.viewer.ModelViewerScreen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 
@@ -97,12 +107,26 @@ class MainActivity : ComponentActivity() {
         val preferences = FilionPreferences(applicationContext)
 
         var keepSplashScreen = true
+        var preloadedModels by mutableStateOf<List<ModelTarget>>(emptyList())
+        var preloadedFolders by mutableStateOf<List<FolderItem>>(emptyList())
+
         lifecycleScope.launch {
             try {
-                traceStartupSection("Filion.splashPreferencePreload") {
+                traceStartupSection("Filion.splashPreload") {
                     withTimeoutOrNull(2000L) {
-                        preferences.themeMode
-                        preferences.dynamicColor
+                        val themeDeferred = async(Dispatchers.IO) {
+                            preferences.themeMode
+                            preferences.dynamicColor
+                        }
+                        val foldersDeferred = async(Dispatchers.IO) {
+                            loadSavedFolders(applicationContext)
+                        }
+                        val scanDeferred = async(Dispatchers.IO) {
+                            scanLocalGlbFiles(applicationContext)
+                        }
+                        themeDeferred.await()
+                        preloadedFolders = foldersDeferred.await()
+                        preloadedModels = scanDeferred.await()
                     }
                 }
             } finally {
@@ -124,10 +148,19 @@ class MainActivity : ComponentActivity() {
                 darkTheme = systemDark
             ) {
                 var activeTarget by remember { mutableStateOf<ModelTarget?>(initialTarget) }
-                var localModels by remember { mutableStateOf<List<ModelTarget>>(emptyList()) }
-                var savedFolderItems by remember { mutableStateOf<List<FolderItem>>(emptyList()) }
+                var localModels by remember { mutableStateOf(preloadedModels) }
+                var savedFolderItems by remember { mutableStateOf(preloadedFolders) }
                 var destinationStack by remember {
                     mutableStateOf(listOf(AppDestination.HOME))
+                }
+
+                LaunchedEffect(preloadedModels, preloadedFolders) {
+                    if (preloadedModels.isNotEmpty()) {
+                        localModels = preloadedModels
+                    }
+                    if (preloadedFolders.isNotEmpty()) {
+                        savedFolderItems = preloadedFolders
+                    }
                 }
 
                 BackHandler(enabled = activeTarget == null && destinationStack.size > 1) {
@@ -147,7 +180,14 @@ class MainActivity : ComponentActivity() {
                                     mimeType == "application/octet-stream"
                             if (isGlb) {
                                 val sizeBytes = queryColumn(uri, OpenableColumns.SIZE) { cursor, index -> cursor.getLong(index) } ?: 0L
-                                activeTarget = ModelTarget(uri, displayName, mimeType, sizeBytes)
+                                activeTarget = ModelTarget(
+                                    uri = uri,
+                                    displayName = displayName,
+                                    mimeType = mimeType,
+                                    sizeBytes = sizeBytes,
+                                    folderName = "External",
+                                    canonicalKey = uri.toString()
+                                )
                             } else {
                                 showFilionToast(
                                     getString(R.string.cannot_open_file, getString(R.string.unsupported_request))
@@ -157,13 +197,15 @@ class MainActivity : ComponentActivity() {
                     }
                 )
 
-                val refreshLocalModels = {
-                    localModels = emptyList()
-                    savedFolderItems = loadSavedFolders(context)
-                    Thread {
+                val refreshLocalModels: () -> Unit = {
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val folders = loadSavedFolders(context)
                         val files = scanLocalGlbFiles(context)
-                        runOnUiThread { localModels = files }
-                    }.start()
+                        withContext(Dispatchers.Main) {
+                            savedFolderItems = folders
+                            localModels = files
+                        }
+                    }
                 }
 
                 val folderPickerLauncher = rememberLauncherForActivityResult(
@@ -175,7 +217,19 @@ class MainActivity : ComponentActivity() {
                                     uri,
                                     Intent.FLAG_GRANT_READ_URI_PERMISSION
                                 )
-                                preferences.addFolder(uri)
+                                val result = preferences.addFolder(uri)
+                                when (result) {
+                                    FolderAddResult.ADDED -> Unit
+                                    FolderAddResult.ALREADY_EXISTS -> {
+                                        showFilionToast(getString(R.string.folder_already_added))
+                                    }
+                                    FolderAddResult.COVERED_BY_PARENT -> {
+                                        showFilionToast(getString(R.string.folder_already_covered))
+                                    }
+                                    FolderAddResult.REPLACED_CHILDREN -> {
+                                        showFilionToast(getString(R.string.folder_subsumed_existing))
+                                    }
+                                }
                                 refreshLocalModels()
                             }.onFailure { e ->
                                 showFilionToast(
@@ -190,74 +244,84 @@ class MainActivity : ComponentActivity() {
                 )
 
                 LaunchedEffect(Unit) {
-                    refreshLocalModels()
+                    if (localModels.isEmpty()) {
+                        refreshLocalModels()
+                    }
                 }
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val target = activeTarget
-                    if (target != null) {
-                        ModelViewerScreen(
-                            reference = target.uri.toString(),
-                            title = target.displayName,
-                            sizeBytes = target.sizeBytes,
-                            mimeType = target.mimeType,
-                            onNavigateBack = { activeTarget = null },
-                            onShare = { shareTarget(target) },
-                            onOpenWith = { openTargetWithChooser(target) }
-                        )
-                    } else {
-                        when (destinationStack.last()) {
-                            AppDestination.HOME -> HomeScreen(
-                                localModels = localModels,
-                                onSelectFile = { pickerLauncher.launch("*/*") },
-                                onSelectLocalModel = { activeTarget = it },
-                                onAddFolder = { folderPickerLauncher.launch(null) },
-                                onOpenSettings = {
-                                    destinationStack = destinationStack.push(AppDestination.SETTINGS)
-                                },
-                                onRefresh = refreshLocalModels
+                    AnimatedContent(
+                        targetState = activeTarget,
+                        transitionSpec = {
+                            fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) togetherWith
+                                fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
+                        },
+                        label = "modelViewerTransition"
+                    ) { target ->
+                        if (target != null) {
+                            ModelViewerScreen(
+                                reference = target.uri.toString(),
+                                title = target.displayName,
+                                sizeBytes = target.sizeBytes,
+                                mimeType = target.mimeType,
+                                onNavigateBack = { activeTarget = null },
+                                onShare = { shareTarget(target) },
+                                onOpenWith = { openTargetWithChooser(target) }
                             )
-                            AppDestination.SETTINGS -> SettingsScreen(
-                                themeMode = themeMode,
-                                dynamicColor = dynamicColor,
-                                dynamicColorAvailable = dynamicColorAvailable,
-                                folders = savedFolderItems,
-                                onThemeModeChange = { mode ->
-                                    preferences.themeMode = mode
-                                    themeMode = mode
-                                },
-                                onDynamicColorChange = { enabled ->
-                                    preferences.dynamicColor = enabled
-                                    dynamicColor = enabled
-                                },
-                                onAddFolder = { folderPickerLauncher.launch(null) },
-                                onRemoveFolder = { uri ->
-                                    preferences.removeFolder(uri)
-                                    runCatching {
-                                        contentResolver.releasePersistableUriPermission(
-                                            uri,
-                                            Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                        )
-                                    }
-                                    refreshLocalModels()
-                                },
-                                onOpenAbout = {
-                                    destinationStack = destinationStack.push(AppDestination.ABOUT)
-                                },
-                                onNavigateBack = { destinationStack = destinationStack.pop() }
-                            )
-                            AppDestination.ABOUT -> AboutScreen(
-                                onOpenLicenses = {
-                                    destinationStack = destinationStack.push(AppDestination.LICENSES)
-                                },
-                                onNavigateBack = { destinationStack = destinationStack.pop() }
-                            )
-                            AppDestination.LICENSES -> LicensesScreen(
-                                onNavigateBack = { destinationStack = destinationStack.pop() }
-                            )
+                        } else {
+                            when (destinationStack.last()) {
+                                AppDestination.HOME -> HomeScreen(
+                                    localModels = localModels,
+                                    onSelectFile = { pickerLauncher.launch("*/*") },
+                                    onSelectLocalModel = { activeTarget = it },
+                                    onAddFolder = { folderPickerLauncher.launch(null) },
+                                    onOpenSettings = {
+                                        destinationStack = destinationStack.push(AppDestination.SETTINGS)
+                                    },
+                                    onRefresh = refreshLocalModels
+                                )
+                                AppDestination.SETTINGS -> SettingsScreen(
+                                    themeMode = themeMode,
+                                    dynamicColor = dynamicColor,
+                                    dynamicColorAvailable = dynamicColorAvailable,
+                                    folders = savedFolderItems,
+                                    onThemeModeChange = { mode ->
+                                        preferences.themeMode = mode
+                                        themeMode = mode
+                                    },
+                                    onDynamicColorChange = { enabled ->
+                                        preferences.dynamicColor = enabled
+                                        dynamicColor = enabled
+                                    },
+                                    onAddFolder = { folderPickerLauncher.launch(null) },
+                                    onRemoveFolder = { uri ->
+                                        preferences.removeFolder(uri)
+                                        runCatching {
+                                            contentResolver.releasePersistableUriPermission(
+                                                uri,
+                                                Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                            )
+                                        }
+                                        refreshLocalModels()
+                                    },
+                                    onOpenAbout = {
+                                        destinationStack = destinationStack.push(AppDestination.ABOUT)
+                                    },
+                                    onNavigateBack = { destinationStack = destinationStack.pop() }
+                                )
+                                AppDestination.ABOUT -> AboutScreen(
+                                    onOpenLicenses = {
+                                        destinationStack = destinationStack.push(AppDestination.LICENSES)
+                                    },
+                                    onNavigateBack = { destinationStack = destinationStack.pop() }
+                                )
+                                AppDestination.LICENSES -> LicensesScreen(
+                                    onNavigateBack = { destinationStack = destinationStack.pop() }
+                                )
+                            }
                         }
                     }
                 }
@@ -375,35 +439,40 @@ private fun scanLocalGlbFiles(context: Context): List<ModelTarget> {
     // App-specific external files dir (always accessible)
     val appExtDir = context.getExternalFilesDir(null)
     if (appExtDir != null) {
-        scanFileDirectory(appExtDir, results)
+        scanFileDirectory(appExtDir, "App Storage", results)
     }
 
     // Saved tree URIs
     val savedFolders = FilionPreferences(context).folders()
     for (treeUri in savedFolders) {
+        val folderName = getFolderDisplayName(context, treeUri)
         runCatching {
-            scanTreeUri(context, treeUri, DocumentsContract.getTreeDocumentId(treeUri), results)
+            val docId = DocumentsContract.getTreeDocumentId(treeUri)
+            scanTreeUri(context, treeUri, docId, folderName, results)
         }
     }
 
-    return results.distinctBy { it.uri.toString() }
+    return results.distinctBy { it.canonicalKey }
 }
 
-private fun scanFileDirectory(dir: File, list: MutableList<ModelTarget>, depth: Int = 0) {
+private fun scanFileDirectory(dir: File, folderName: String, list: MutableList<ModelTarget>, depth: Int = 0) {
     if (depth > 2) return
     val files = dir.listFiles() ?: return
     for (file in files) {
         if (file.isDirectory) {
             if (!file.name.startsWith(".") && file.name != "Android") {
-                scanFileDirectory(file, list, depth + 1)
+                scanFileDirectory(file, file.name, list, depth + 1)
             }
         } else if (file.name.endsWith(".glb", ignoreCase = true)) {
+            val canonical = runCatching { file.canonicalPath }.getOrDefault(file.absolutePath)
             list.add(
                 ModelTarget(
                     uri = Uri.fromFile(file),
                     displayName = file.name,
                     mimeType = "model/gltf-binary",
-                    sizeBytes = file.length()
+                    sizeBytes = file.length(),
+                    folderName = folderName,
+                    canonicalKey = "file:$canonical"
                 )
             )
         }
@@ -414,6 +483,7 @@ private fun scanTreeUri(
     context: Context,
     treeUri: Uri,
     documentId: String,
+    currentFolderName: String,
     results: MutableList<ModelTarget>,
     depth: Int = 0
 ) {
@@ -442,16 +512,19 @@ private fun scanTreeUri(
 
                 if (mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
                     if (!name.startsWith(".")) {
-                        scanTreeUri(context, treeUri, childId, results, depth + 1)
+                        scanTreeUri(context, treeUri, childId, name, results, depth + 1)
                     }
                 } else if (name.endsWith(".glb", ignoreCase = true) || mimeType == "model/gltf-binary") {
                     val fileUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childId)
+                    val authority = treeUri.authority ?: "content"
                     results.add(
                         ModelTarget(
                             uri = fileUri,
                             displayName = name,
                             mimeType = if (mimeType.isBlank()) "model/gltf-binary" else mimeType,
-                            sizeBytes = size
+                            sizeBytes = size,
+                            folderName = currentFolderName,
+                            canonicalKey = "$authority:$childId"
                         )
                     )
                 }
@@ -459,8 +532,6 @@ private fun scanTreeUri(
         }
     }
 }
-
-
 
 data class FolderItem(
     val uri: Uri,
@@ -471,5 +542,7 @@ data class ModelTarget(
     val uri: Uri,
     val displayName: String,
     val mimeType: String,
-    val sizeBytes: Long
+    val sizeBytes: Long,
+    val folderName: String = "",
+    val canonicalKey: String = uri.toString()
 )

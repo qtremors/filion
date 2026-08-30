@@ -88,6 +88,12 @@ import dev.qtremors.filion.ui.EmptyState
 import dev.qtremors.filion.ui.FilionScreenScaffold
 import dev.qtremors.filion.ui.formatViewerFileSize
 
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import dev.qtremors.filion.ui.FilionFastScrollbar
+import dev.qtremors.filion.ui.LazyListScrollbarState
+
 @Composable
 fun HomeScreen(
     localModels: List<ModelTarget>,
@@ -102,6 +108,8 @@ fun HomeScreen(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var isRefreshing by remember { mutableStateOf(false) }
 
+    val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
+    val scrollbarState = remember(listState) { LazyListScrollbarState(listState) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val pullRefreshState = rememberPullToRefreshState()
     val focusRequester = remember { FocusRequester() }
@@ -112,7 +120,8 @@ fun HomeScreen(
             localModels
         } else {
             localModels.filter {
-                it.displayName.contains(searchQuery.trim(), ignoreCase = true)
+                it.displayName.contains(searchQuery.trim(), ignoreCase = true) ||
+                    it.folderName.contains(searchQuery.trim(), ignoreCase = true)
             }
         }
     }
@@ -181,8 +190,8 @@ fun HomeScreen(
                             IconButton(
                                 onClick = { searchQuery = "" },
                                 modifier = Modifier
-                                .clip(CircleShape)
-                                .bounceClickable { searchQuery = "" }
+                                    .clip(CircleShape)
+                                    .bounceClickable { searchQuery = "" }
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
@@ -244,229 +253,258 @@ fun HomeScreen(
             }
         }
     ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = {
-                isRefreshing = true
-                onRefresh()
-                isRefreshing = false
-            },
-            state = pullRefreshState,
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = padding.calculateTopPadding())
         ) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(
-                    top = 16.dp,
-                    bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() +
-                        MaterialTheme.spacing.screenGutter
-                ),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = {
+                    isRefreshing = true
+                    onRefresh()
+                    isRefreshing = false
+                },
+                state = pullRefreshState,
+                modifier = Modifier.fillMaxSize()
             ) {
-                // Hero Action Card (only visible when not actively searching)
-                if (!isSearchActive) {
-                    item(key = "hero_action_card") {
-                        Card(
-                            shape = RoundedCornerShape(24.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .bounceClickable(onClick = onSelectFile)
-                        ) {
-                            Row(
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(
+                        top = 16.dp,
+                        bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() +
+                            MaterialTheme.spacing.screenGutter
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)
+                ) {
+                    // Hero Action Card (only visible when not actively searching)
+                    if (!isSearchActive) {
+                        item(key = "hero_action_card") {
+                            Card(
+                                shape = RoundedCornerShape(24.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                                ),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(20.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(bottom = 12.dp)
+                                    .bounceClickable(onClick = onSelectFile)
                             ) {
-                                Surface(
-                                    shape = RoundedCornerShape(16.dp),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(52.dp)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(20.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = Icons.Default.FolderOpen,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onPrimary,
-                                            modifier = Modifier.size(28.dp)
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(52.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = Icons.Default.FolderOpen,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onPrimary,
+                                                modifier = Modifier.size(28.dp)
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = stringResource(R.string.open_model),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = stringResource(R.string.open_model_description),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
+                                        )
+                                    }
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Header row for Discovered Models
+                    item(key = "discovered_models_header") {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp, bottom = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = if (isSearchActive && searchQuery.isNotBlank()) {
+                                        "${filteredModels.size} matching"
+                                    } else {
+                                        stringResource(R.string.models_discovered)
+                                    },
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+
+                                if (!isSearchActive && localModels.isNotEmpty()) {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = MaterialTheme.colorScheme.surfaceContainerHigh
+                                    ) {
+                                        Text(
+                                            text = localModels.size.toString(),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                         )
                                     }
                                 }
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = stringResource(R.string.open_model),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = stringResource(R.string.open_model_description),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
-                                    )
+                            }
+
+                            if (!isSearchActive) {
+                                TextButton(
+                                    onClick = onAddFolder,
+                                    modifier = Modifier.bounceClickable(onClick = onAddFolder)
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(stringResource(R.string.add_folder))
                                 }
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f),
-                                    modifier = Modifier.size(20.dp)
+                            }
+                        }
+                    }
+
+                    // Discovered Models List / Empty State
+                    if (filteredModels.isEmpty()) {
+                        item(key = "empty_state") {
+                            if (isSearchActive && searchQuery.isNotBlank()) {
+                                EmptyState(
+                                    icon = Icons.Default.SearchOff,
+                                    title = stringResource(R.string.no_search_results),
+                                    description = stringResource(R.string.no_search_results_description)
+                                )
+                            } else {
+                                EmptyState(
+                                    icon = Icons.Default.ViewInAr,
+                                    title = stringResource(R.string.no_models_found),
+                                    description = stringResource(R.string.no_models_description),
+                                    actionLabel = stringResource(R.string.open_model),
+                                    onAction = onSelectFile,
+                                    secondaryActionLabel = stringResource(R.string.add_scan_folder),
+                                    onSecondaryAction = onAddFolder
                                 )
                             }
                         }
-                    }
-                }
-
-                // Header row for Discovered Models
-                item(key = "discovered_models_header") {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                text = if (isSearchActive && searchQuery.isNotBlank()) {
-                                    "${filteredModels.size} matching"
-                                } else {
-                                    stringResource(R.string.models_discovered)
-                                },
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-
-                            if (!isSearchActive && localModels.isNotEmpty()) {
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = MaterialTheme.colorScheme.surfaceContainerHigh
-                                ) {
-                                    Text(
-                                        text = localModels.size.toString(),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-                        }
-
-                        if (!isSearchActive) {
-                            TextButton(
-                                onClick = onAddFolder,
-                                modifier = Modifier.bounceClickable(onClick = onAddFolder)
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(stringResource(R.string.add_folder))
-                            }
-                        }
-                    }
-                }
-
-                // Discovered Models List / Empty State
-                if (filteredModels.isEmpty()) {
-                    item(key = "empty_state") {
-                        if (isSearchActive && searchQuery.isNotBlank()) {
-                            EmptyState(
-                                icon = Icons.Default.SearchOff,
-                                title = stringResource(R.string.no_search_results),
-                                description = stringResource(R.string.no_search_results_description)
-                            )
-                        } else {
-                            EmptyState(
-                                icon = Icons.Default.ViewInAr,
-                                title = stringResource(R.string.no_models_found),
-                                description = stringResource(R.string.no_models_description),
-                                actionLabel = stringResource(R.string.open_model),
-                                onAction = onSelectFile,
-                                secondaryActionLabel = stringResource(R.string.add_scan_folder),
-                                onSecondaryAction = onAddFolder
-                            )
-                        }
-                    }
-                } else {
-                    item(key = "models_list_container") {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)
-                        ) {
-                            filteredModels.forEachIndexed { index, model ->
-                                SegmentedListItem(
-                                    onClick = { onSelectLocalModel(model) },
-                                    shapes = expressiveSegmentedShapes(index = index, count = filteredModels.size),
-                                    leadingContent = {
-                                        Box(
-                                            modifier = Modifier.fillMaxHeight(),
-                                            contentAlignment = Alignment.Center
+                    } else {
+                        itemsIndexed(
+                            items = filteredModels,
+                            key = { _, model -> model.canonicalKey }
+                        ) { index, model ->
+                            val folderBadge = if (model.folderName.isNotBlank()) "${model.folderName} • " else ""
+                            SegmentedListItem(
+                                onClick = { onSelectLocalModel(model) },
+                                shapes = expressiveSegmentedShapes(index = index, count = filteredModels.size),
+                                leadingContent = {
+                                    Box(
+                                        modifier = Modifier.fillMaxHeight(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                            modifier = Modifier.size(44.dp)
                                         ) {
-                                            Surface(
-                                                shape = RoundedCornerShape(12.dp),
-                                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                                modifier = Modifier.size(44.dp)
-                                            ) {
-                                                Box(contentAlignment = Alignment.Center) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.ViewInAr,
-                                                        contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.primary,
-                                                        modifier = Modifier.size(24.dp)
-                                                    )
-                                                }
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    imageVector = Icons.Default.ViewInAr,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(24.dp)
+                                                )
                                             }
                                         }
-                                    },
-                                    content = {
-                                        Text(
-                                            text = model.displayName,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = FontWeight.SemiBold,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
+                                    }
+                                },
+                                content = {
+                                    Text(
+                                        text = model.displayName,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                },
+                                supportingContent = {
+                                    Text(
+                                        text = "$folderBadge${formatViewerFileSize(model.sizeBytes)} • 3D Model",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                trailingContent = {
+                                    Box(
+                                        modifier = Modifier.fillMaxHeight(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                            modifier = Modifier.size(20.dp)
                                         )
-                                    },
-                                    supportingContent = {
-                                        Text(
-                                            text = "${formatViewerFileSize(model.sizeBytes)} • 3D Model",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    },
-                                    trailingContent = {
-                                        Box(
-                                            modifier = Modifier.fillMaxHeight(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    },
-                                    colors = ListItemDefaults.segmentedColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                    ),
-                                    modifier = Modifier.height(IntrinsicSize.Min)
-                                )
-                            }
+                                    }
+                                },
+                                colors = ListItemDefaults.segmentedColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                ),
+                                modifier = Modifier.height(IntrinsicSize.Min)
+                            )
                         }
                     }
                 }
+            }
+
+            if (filteredModels.size > 8) {
+                val headerOffset = if (isSearchActive) 1 else 2
+                FilionFastScrollbar(
+                    scrollbarState = scrollbarState,
+                    labelForIndex = { itemIndex ->
+                        val modelIndex = (itemIndex - headerOffset).coerceIn(0, filteredModels.lastIndex)
+                        if (filteredModels.isNotEmpty()) {
+                            val firstChar = filteredModels[modelIndex].displayName.trim().firstOrNull()?.uppercaseChar()
+                            if (firstChar != null && (firstChar.isLetter() || firstChar.isDigit())) {
+                                firstChar.toString()
+                            } else {
+                                "#"
+                            }
+                        } else {
+                            ""
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(
+                            bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 8.dp
+                        )
+                )
             }
         }
     }

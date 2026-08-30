@@ -46,6 +46,9 @@
     <string name="no_search_results">No matching models</string>
     <string name="no_search_results_description">Try searching for a different keyword or file name.</string>
     <string name="folder_permission_failed">Could not save folder access: %1$s</string>
+    <string name="folder_already_added">Folder is already added.</string>
+    <string name="folder_already_covered">Folder is already covered by an existing parent folder.</string>
+    <string name="folder_subsumed_existing">Added folder and merged existing subfolders.</string>
 
     <!-- Shared navigation -->
     <string name="back">Back</string>

@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -63,6 +64,14 @@ fun ModelViewerScreen(
 ) {
     var viewerState by remember(reference) { mutableStateOf(ModelViewerState()) }
     var autoRotationAngle by remember(reference) { mutableFloatStateOf(0f) }
+
+    val view = LocalView.current
+    DisposableEffect(view) {
+        view.keepScreenOn = true
+        onDispose {
+            view.keepScreenOn = false
+        }
+    }
 
     // Smooth turntable rotation loop for screensaver mode
     LaunchedEffect(viewerState.autoRotate, viewerState.autoRotateSpeed) {

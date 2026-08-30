@@ -19,14 +19,24 @@ suspend fun loadSceneViewModelInstance(
         val bytes = withContext(Dispatchers.IO) {
             context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
         } ?: error("Unable to open input stream for URI: $reference")
-        val modelInstance = withContext(Dispatchers.Main) {
+        return withContext(Dispatchers.Main) {
             modelLoader.createModelInstance(ByteBuffer.wrap(bytes))
         }
-        return modelInstance ?: error("Unable to parse model from URI: $reference")
+    }
+
+    if (uri?.scheme == "file") {
+        val filePath = uri.path ?: reference
+        val file = File(filePath)
+        if (file.exists()) {
+            val bytes = withContext(Dispatchers.IO) { file.readBytes() }
+            return withContext(Dispatchers.Main) {
+                modelLoader.createModelInstance(ByteBuffer.wrap(bytes))
+            }
+        }
     }
 
     val modelInstance = when (uri?.scheme) {
-        "file", "http", "https" ->
+        "http", "https" ->
             modelLoader.loadModelInstance(reference)
         null, "" -> {
             val file = File(reference)
