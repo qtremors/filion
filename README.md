@@ -35,11 +35,11 @@ Filion is an offline Android 3D model viewer built for inspecting GLB models wit
 Download the latest APK from [GitHub Releases](https://github.com/qtremors/filion/releases) and install it on a device running Android 10 or newer.
 
 For the best download speed and storage footprint, choose the APK matching your device's CPU architecture:
-- **`Filion-0.0.6-arm64-v8a.apk`**: Recommended for modern 64-bit Android phones and tablets (~12.6 MB).
-- **`Filion-0.0.6-armeabi-v7a.apk`**: 32-bit ARM devices (~11.1 MB).
-- **`Filion-0.0.6-x86_64.apk`**: 64-bit x86 emulators and Chromebooks (~13.1 MB).
-- **`Filion-0.0.6-x86.apk`**: 32-bit x86 emulators (~13.2 MB).
-- **`Filion-0.0.6.apk`**: Universal APK containing all architectures (~31.5 MB).
+- **`Filion-0.0.7-arm64-v8a.apk`**: Recommended for modern 64-bit Android phones and tablets (~12.6 MB).
+- **`Filion-0.0.7-armeabi-v7a.apk`**: 32-bit ARM devices (~11.1 MB).
+- **`Filion-0.0.7-x86_64.apk`**: 64-bit x86 emulators and Chromebooks (~13.1 MB).
+- **`Filion-0.0.7-x86.apk`**: 32-bit x86 emulators (~13.2 MB).
+- **`Filion-0.0.7.apk`**: Universal APK containing all architectures (~31.5 MB).
 
 ## Features
 

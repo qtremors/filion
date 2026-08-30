@@ -1,19 +1,29 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package dev.qtremors.filion.about
 
+import android.content.ClipData
 import android.os.Build
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.BugReport
@@ -25,50 +35,84 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Source
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
+import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.qtremors.filion.BuildConfig
 import dev.qtremors.filion.R
+import dev.qtremors.filion.theme.bounceClickable
+import dev.qtremors.filion.theme.expressiveSegmentedShapes
+import dev.qtremors.filion.theme.spacing
+import dev.qtremors.filion.ui.FilionScreenScaffold
+import dev.qtremors.filion.ui.FilionSectionHeader
+import dev.qtremors.filion.ui.showFilionToast
+import kotlinx.coroutines.launch
 
-private const val DEVELOPER_URL = "https://github.com/qtremors"
-private const val WEBSITE_URL = "https://qtremors.github.io/filion/"
-private const val REPOSITORY_URL = "https://github.com/qtremors/filion"
-private const val PRIVACY_URL = "$REPOSITORY_URL/blob/main/PRIVACY.md"
-private const val LICENSE_URL = "$REPOSITORY_URL/blob/main/LICENSE.md"
-private const val RELEASES_URL = "$REPOSITORY_URL/releases"
-private const val ISSUES_URL = "$REPOSITORY_URL/issues/new"
-
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AboutScreen(
     onOpenLicenses: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
-    Scaffold(
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
+    val copyToClipboard = { text: String ->
+        coroutineScope.launch {
+            clipboard.setClipEntry(
+                ClipEntry(
+                    ClipData.newPlainText(context.getString(R.string.app_name), text)
+                )
+            )
+            context.showFilionToast(context.getString(R.string.copied_to_clipboard))
+        }
+    }
+
+    FilionScreenScaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.about_title)) },
+            LargeTopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.about_title),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                scrollBehavior = scrollBehavior,
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .bounceClickable(onClick = onNavigateBack)
+                    ) {
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.back)
                         )
                     }
@@ -79,152 +123,235 @@ fun AboutScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .navigationBarsPadding(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(top = padding.calculateTopPadding())
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(
+                top = 16.dp,
+                bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() +
+                    MaterialTheme.spacing.screenGutter
+            ),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            // App Logo
             item {
-                Image(
-                    painter = painterResource(R.drawable.ic_filion_logo_color),
-                    contentDescription = stringResource(R.string.app_name),
-                    modifier = Modifier.size(112.dp)
-                )
-            }
-            item {
-                AboutSection(stringResource(R.string.about_app_info)) {
-                    AboutItem(
-                        icon = Icons.Default.Info,
-                        title = stringResource(R.string.version),
-                        supporting = BuildConfig.VERSION_NAME
-                    )
-                    HorizontalDivider()
-                    AboutItem(
-                        icon = Icons.Default.Code,
-                        title = stringResource(R.string.developer),
-                        supporting = stringResource(R.string.developer_name),
-                        external = true,
-                        onClick = { uriHandler.openUri(DEVELOPER_URL) }
-                    )
-                    HorizontalDivider()
-                    AboutItem(
-                        icon = Icons.Default.Language,
-                        title = stringResource(R.string.website),
-                        supporting = "qtremors.github.io/filion",
-                        external = true,
-                        onClick = { uriHandler.openUri(WEBSITE_URL) }
-                    )
-                    HorizontalDivider()
-                    AboutItem(
-                        icon = Icons.Default.Source,
-                        title = stringResource(R.string.repository),
-                        supporting = "github.com/qtremors/filion",
-                        external = true,
-                        onClick = { uriHandler.openUri(REPOSITORY_URL) }
-                    )
-                    HorizontalDivider()
-                    AboutItem(
-                        icon = Icons.Default.PhoneAndroid,
-                        title = stringResource(R.string.device),
-                        supporting = "${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE}"
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_filion_logo_color),
+                        contentDescription = stringResource(R.string.app_name),
+                        modifier = Modifier.size(96.dp)
                     )
                 }
             }
+
+            // App Info Section
             item {
-                AboutSection(stringResource(R.string.about_privacy_license)) {
-                    AboutItem(
-                        icon = Icons.Default.Lock,
-                        title = stringResource(R.string.privacy_policy),
-                        supporting = stringResource(R.string.privacy_summary),
-                        external = true,
-                        onClick = { uriHandler.openUri(PRIVACY_URL) }
-                    )
-                    HorizontalDivider()
-                    AboutItem(
-                        icon = Icons.Default.Description,
-                        title = stringResource(R.string.project_license),
-                        supporting = stringResource(R.string.mit_license),
-                        external = true,
-                        onClick = { uriHandler.openUri(LICENSE_URL) }
-                    )
-                    HorizontalDivider()
-                    AboutItem(
-                        icon = Icons.Default.Description,
-                        title = stringResource(R.string.open_source_licenses),
-                        supporting = stringResource(R.string.open_source_licenses_description),
-                        onClick = onOpenLicenses
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FilionSectionHeader(text = stringResource(R.string.section_app_info))
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)
+                    ) {
+                        SegmentedListItem(
+                            onClick = { copyToClipboard("Filion v${BuildConfig.VERSION_NAME}") },
+                            shapes = expressiveSegmentedShapes(index = 0, count = 5),
+                            content = { Text(stringResource(R.string.version)) },
+                            supportingContent = { Text(BuildConfig.VERSION_NAME) },
+                            leadingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                }
+                            },
+                            colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            modifier = Modifier.height(IntrinsicSize.Min)
+                        )
+                        SegmentedListItem(
+                            onClick = { uriHandler.openUri(context.getString(R.string.developer_url)) },
+                            shapes = expressiveSegmentedShapes(index = 1, count = 5),
+                            content = { Text(stringResource(R.string.developer)) },
+                            supportingContent = { Text(stringResource(R.string.developer_name)) },
+                            leadingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.Code, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                }
+                            },
+                            trailingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                }
+                            },
+                            colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            modifier = Modifier.height(IntrinsicSize.Min)
+                        )
+                        SegmentedListItem(
+                            onClick = { uriHandler.openUri(context.getString(R.string.website_url)) },
+                            shapes = expressiveSegmentedShapes(index = 2, count = 5),
+                            content = { Text(stringResource(R.string.website)) },
+                            supportingContent = { Text(stringResource(R.string.website_display)) },
+                            leadingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.Language, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                }
+                            },
+                            trailingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                }
+                            },
+                            colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            modifier = Modifier.height(IntrinsicSize.Min)
+                        )
+                        SegmentedListItem(
+                            onClick = { uriHandler.openUri(context.getString(R.string.repository_full_url)) },
+                            shapes = expressiveSegmentedShapes(index = 3, count = 5),
+                            content = { Text(stringResource(R.string.repository)) },
+                            supportingContent = { Text(stringResource(R.string.repository_url)) },
+                            leadingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.Source, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                }
+                            },
+                            trailingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                }
+                            },
+                            colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            modifier = Modifier.height(IntrinsicSize.Min)
+                        )
+                        SegmentedListItem(
+                            onClick = {
+                                copyToClipboard("${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.RELEASE})")
+                            },
+                            shapes = expressiveSegmentedShapes(index = 4, count = 5),
+                            content = { Text(stringResource(R.string.device)) },
+                            supportingContent = { Text("${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE}") },
+                            leadingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.PhoneAndroid, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                }
+                            },
+                            colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            modifier = Modifier.height(IntrinsicSize.Min)
+                        )
+                    }
                 }
             }
+
+            // Privacy & License Section
             item {
-                AboutSection(stringResource(R.string.about_support)) {
-                    AboutItem(
-                        icon = Icons.Default.History,
-                        title = stringResource(R.string.view_releases),
-                        supporting = stringResource(R.string.view_releases_description),
-                        external = true,
-                        onClick = { uriHandler.openUri(RELEASES_URL) }
-                    )
-                    HorizontalDivider()
-                    AboutItem(
-                        icon = Icons.Default.BugReport,
-                        title = stringResource(R.string.report_issue),
-                        supporting = stringResource(R.string.report_issue_description),
-                        external = true,
-                        onClick = { uriHandler.openUri(ISSUES_URL) }
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FilionSectionHeader(text = stringResource(R.string.section_privacy))
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)
+                    ) {
+                        SegmentedListItem(
+                            onClick = { uriHandler.openUri(context.getString(R.string.privacy_policy_url)) },
+                            shapes = expressiveSegmentedShapes(index = 0, count = 2),
+                            content = { Text(stringResource(R.string.privacy_policy)) },
+                            supportingContent = { Text(stringResource(R.string.privacy_summary)) },
+                            leadingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                }
+                            },
+                            trailingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                }
+                            },
+                            colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            modifier = Modifier.height(IntrinsicSize.Min)
+                        )
+                        SegmentedListItem(
+                            onClick = { uriHandler.openUri(context.getString(R.string.project_license_url)) },
+                            shapes = expressiveSegmentedShapes(index = 1, count = 2),
+                            content = { Text(stringResource(R.string.project_license)) },
+                            supportingContent = { Text(stringResource(R.string.mit_license)) },
+                            leadingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.Description, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                }
+                            },
+                            trailingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                }
+                            },
+                            colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            modifier = Modifier.height(IntrinsicSize.Min)
+                        )
+                    }
+                }
+            }
+
+            // Changelog & Support Section
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FilionSectionHeader(text = stringResource(R.string.section_changelogs))
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)
+                    ) {
+                        SegmentedListItem(
+                            onClick = { uriHandler.openUri(context.getString(R.string.view_releases_url)) },
+                            shapes = expressiveSegmentedShapes(index = 0, count = 3),
+                            content = { Text(stringResource(R.string.view_releases)) },
+                            supportingContent = { Text(stringResource(R.string.view_releases_description)) },
+                            leadingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.History, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                }
+                            },
+                            trailingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                }
+                            },
+                            colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            modifier = Modifier.height(IntrinsicSize.Min)
+                        )
+                        SegmentedListItem(
+                            onClick = { uriHandler.openUri(context.getString(R.string.report_issue_url)) },
+                            shapes = expressiveSegmentedShapes(index = 1, count = 3),
+                            content = { Text(stringResource(R.string.report_issue)) },
+                            supportingContent = { Text(stringResource(R.string.report_issue_description)) },
+                            leadingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.BugReport, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                }
+                            },
+                            trailingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                }
+                            },
+                            colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            modifier = Modifier.height(IntrinsicSize.Min)
+                        )
+                        SegmentedListItem(
+                            onClick = onOpenLicenses,
+                            shapes = expressiveSegmentedShapes(index = 2, count = 3),
+                            content = { Text(stringResource(R.string.open_source_licenses)) },
+                            supportingContent = { Text(stringResource(R.string.open_source_licenses_description)) },
+                            leadingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                }
+                            },
+                            trailingContent = {
+                                Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                                }
+                            },
+                            colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            modifier = Modifier.height(IntrinsicSize.Min)
+                        )
+                    }
                 }
             }
         }
     }
-}
-
-@Composable
-private fun AboutSection(
-    title: String,
-    content: @Composable () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 8.dp)
-        )
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column { content() }
-        }
-    }
-}
-
-@Composable
-private fun AboutItem(
-    icon: ImageVector,
-    title: String,
-    supporting: String,
-    external: Boolean = false,
-    onClick: (() -> Unit)? = null
-) {
-    ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = { Text(supporting) },
-        leadingContent = {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        },
-        trailingContent = if (onClick != null) {
-            {
-                Icon(
-                    if (external) Icons.AutoMirrored.Filled.OpenInNew else Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null
-                )
-            }
-        } else {
-            null
-        },
-        modifier = if (onClick == null) Modifier else Modifier.clickable(onClick = onClick)
-    )
 }

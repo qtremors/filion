@@ -13,9 +13,11 @@ coroutines = "1.11.0"
 filament = "1.72.0"
 sceneview = "4.18.0"
 robolectric = "4.16.1"
+coreSplashScreen = "1.2.0"
 
 
 [libraries]
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashScreen" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

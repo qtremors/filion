@@ -7,6 +7,8 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.StrictMode
+import android.os.Trace
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.widget.Toast
@@ -14,12 +16,25 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -27,42 +42,85 @@ import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ViewInAr
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
 import dev.qtremors.filion.about.AboutScreen
 import dev.qtremors.filion.about.LicensesScreen
 import dev.qtremors.filion.settings.FilionPreferences
 import dev.qtremors.filion.settings.SettingsScreen
-import dev.qtremors.filion.settings.resolveDarkTheme
+import dev.qtremors.filion.settings.ThemeMode
 import dev.qtremors.filion.theme.FilionTheme
+import dev.qtremors.filion.theme.bounceClickable
 import dev.qtremors.filion.ui.formatViewerFileSize
+import dev.qtremors.filion.ui.showFilionToast
 import dev.qtremors.filion.viewer.ModelViewerScreen
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        installDebugStrictMode()
+        val splashScreen = traceStartupSection("Filion.installSplashScreen") {
+            installSplashScreen()
+        }
+        traceStartupSection("Filion.activityOnCreate") {
+            super.onCreate(savedInstanceState)
+        }
+
+        enableEdgeToEdge()
 
         val initialTarget = resolveModelTarget(intent)
+        val preferences = FilionPreferences(applicationContext)
+
+        var keepSplashScreen = true
+        lifecycleScope.launch {
+            try {
+                traceStartupSection("Filion.splashPreferencePreload") {
+                    withTimeoutOrNull(2000L) {
+                        preferences.themeMode
+                        preferences.dynamicColor
+                    }
+                }
+            } finally {
+                keepSplashScreen = false
+            }
+        }
+        splashScreen.setKeepOnScreenCondition { keepSplashScreen }
 
         setContent {
             val context = LocalContext.current
-            val preferences = remember { FilionPreferences(context.applicationContext) }
             var themeMode by remember { mutableStateOf(preferences.themeMode) }
             var dynamicColor by remember { mutableStateOf(preferences.dynamicColor) }
             val dynamicColorAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
             val systemDark = isSystemInDarkTheme()
 
             FilionTheme(
-                darkTheme = themeMode.resolveDarkTheme(systemDark),
-                dynamicColor = dynamicColor && dynamicColorAvailable
+                themeMode = themeMode,
+                dynamicColor = dynamicColor,
+                darkTheme = systemDark
             ) {
                 var activeTarget by remember { mutableStateOf<ModelTarget?>(initialTarget) }
                 var localModels by remember { mutableStateOf<List<ModelTarget>>(emptyList()) }
@@ -90,11 +148,9 @@ class MainActivity : ComponentActivity() {
                                 val sizeBytes = queryColumn(uri, OpenableColumns.SIZE) { cursor, index -> cursor.getLong(index) } ?: 0L
                                 activeTarget = ModelTarget(uri, displayName, mimeType, sizeBytes)
                             } else {
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    getString(R.string.cannot_open_file, getString(R.string.unsupported_request)),
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                showFilionToast(
+                                    getString(R.string.cannot_open_file, getString(R.string.unsupported_request))
+                                )
                             }
                         }
                     }
@@ -121,14 +177,12 @@ class MainActivity : ComponentActivity() {
                                 preferences.addFolder(uri)
                                 refreshLocalModels()
                             }.onFailure { e ->
-                                Toast.makeText(
-                                    context,
+                                showFilionToast(
                                     getString(
                                         R.string.folder_permission_failed,
                                         e.localizedMessage ?: getString(R.string.unsupported_request)
-                                    ),
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                    )
+                                )
                             }
                         }
                     }
@@ -236,7 +290,7 @@ class MainActivity : ComponentActivity() {
         runCatching {
             startActivity(Intent.createChooser(sendIntent, getString(R.string.share)))
         }.onFailure {
-            Toast.makeText(this, getString(R.string.no_app_found), Toast.LENGTH_SHORT).show()
+            showFilionToast(getString(R.string.no_app_found))
         }
     }
 
@@ -249,7 +303,7 @@ class MainActivity : ComponentActivity() {
         runCatching {
             startActivity(Intent.createChooser(openIntent, getString(R.string.image_gallery_open_with)))
         }.onFailure {
-            Toast.makeText(this, getString(R.string.no_app_found), Toast.LENGTH_SHORT).show()
+            showFilionToast(getString(R.string.no_app_found))
         }
     }
 
@@ -261,6 +315,35 @@ class MainActivity : ComponentActivity() {
                 if (index < 0 || cursor.isNull(index)) null else read(cursor, index)
             }
         }.getOrNull()
+
+    private fun installDebugStrictMode() {
+        if (!BuildConfig.DEBUG) return
+
+        StrictMode.setThreadPolicy(
+            StrictMode.ThreadPolicy.Builder()
+                .detectDiskReads()
+                .detectDiskWrites()
+                .detectNetwork()
+                .penaltyLog()
+                .build()
+        )
+        StrictMode.setVmPolicy(
+            StrictMode.VmPolicy.Builder()
+                .detectLeakedClosableObjects()
+                .detectActivityLeaks()
+                .penaltyLog()
+                .build()
+        )
+    }
+
+    private inline fun <T> traceStartupSection(name: String, block: () -> T): T {
+        Trace.beginSection(name)
+        return try {
+            block()
+        } finally {
+            Trace.endSection()
+        }
+    }
 }
 
 private fun getFolderDisplayName(context: Context, uri: Uri): String {
@@ -288,13 +371,13 @@ private fun loadSavedFolders(context: Context): List<FolderItem> {
 private fun scanLocalGlbFiles(context: Context): List<ModelTarget> {
     val results = mutableListOf<ModelTarget>()
 
-    // 1. Scan app-specific external files dir (no permissions needed, always accessible)
+    // App-specific external files dir (always accessible)
     val appExtDir = context.getExternalFilesDir(null)
     if (appExtDir != null) {
         scanFileDirectory(appExtDir, results)
     }
 
-    // 2. Scan saved tree URIs
+    // Saved tree URIs
     val savedFolders = FilionPreferences(context).folders()
     for (treeUri in savedFolders) {
         runCatching {
@@ -342,7 +425,7 @@ private fun scanTreeUri(
         DocumentsContract.Document.COLUMN_MIME_TYPE,
         DocumentsContract.Document.COLUMN_SIZE
     )
-    
+
     runCatching {
         contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
             val idCol = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
@@ -389,11 +472,11 @@ private fun HomeScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(24.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp)
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        // App header with refresh option
+        // App header with refresh and settings options
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -405,16 +488,26 @@ private fun HomeScreen(
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.primary
             )
-            Row {
-                IconButton(onClick = onRefresh) {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                IconButton(
+                    onClick = onRefresh,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .bounceClickable(onClick = onRefresh)
+                ) {
                     Icon(
-                        Icons.Default.Refresh,
+                        imageVector = Icons.Default.Refresh,
                         contentDescription = stringResource(R.string.refresh_models)
                     )
                 }
-                IconButton(onClick = onOpenSettings) {
+                IconButton(
+                    onClick = onOpenSettings,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .bounceClickable(onClick = onOpenSettings)
+                ) {
                     Icon(
-                        Icons.Default.Settings,
+                        imageVector = Icons.Default.Settings,
                         contentDescription = stringResource(R.string.open_settings)
                     )
                 }
@@ -429,7 +522,7 @@ private fun HomeScreen(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onSelectFile)
+                .bounceClickable(onClick = onSelectFile)
         ) {
             Row(
                 modifier = Modifier
@@ -497,7 +590,10 @@ private fun HomeScreen(
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    FilledTonalButton(onClick = onAddFolder) {
+                    FilledTonalButton(
+                        onClick = onAddFolder,
+                        modifier = Modifier.bounceClickable(onClick = onAddFolder)
+                    ) {
                         Icon(Icons.Default.Add, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(stringResource(R.string.add_scan_folder))
@@ -515,7 +611,7 @@ private fun HomeScreen(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onSelectLocalModel(model) }
+                            .bounceClickable { onSelectLocalModel(model) }
                     ) {
                         Row(
                             modifier = Modifier

@@ -48,6 +48,11 @@ class FilionPreferencesTest {
         assertEquals(ThemeMode.DARK, restored.themeMode)
         assertFalse(restored.dynamicColor)
 
+        preferences.themeMode = ThemeMode.OLED
+        assertEquals(ThemeMode.OLED, FilionPreferences(context).themeMode)
+        assertTrue(ThemeMode.OLED.resolveDarkTheme(systemDark = false))
+        assertTrue(ThemeMode.OLED.resolveDarkTheme(systemDark = true))
+
         context.getSharedPreferences("filion_prefs", Context.MODE_PRIVATE)
             .edit()
             .putString("theme_mode", "UNKNOWN")

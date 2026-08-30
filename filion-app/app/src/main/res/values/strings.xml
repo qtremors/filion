@@ -7,6 +7,10 @@
     <string name="share">Share</string>
     <string name="action_info">Info</string>
     <string name="action_more_options">More options</string>
+    <string name="clear_selection">Clear selection</string>
+    <string name="copied_to_clipboard">Copied to clipboard</string>
+
+    <!-- Model Viewer -->
     <string name="model_viewer_title">Model Viewer</string>
     <string name="model_viewer_loading">Loading model…</string>
     <string name="model_viewer_error">Filion could not render this model.</string>
@@ -19,7 +23,8 @@
     <string name="model_viewer_background_theme">Theme</string>
     <string name="model_viewer_background_white">White</string>
     <string name="model_viewer_background_black">Black</string>
-    <!-- Home/Launcher screen strings -->
+
+    <!-- Home screen strings -->
     <string name="open_model">Open 3D Model</string>
     <string name="open_model_description">Browse the system picker for any GLB model</string>
     <string name="refresh_models">Refresh models</string>
@@ -37,9 +42,14 @@
     <string name="settings_title">Settings</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_info">Info</string>
-    <string name="theme_system">System default</string>
+    <string name="section_appearance">Appearance</string>
+    <string name="section_scan_folders">Scan Folders</string>
+    <string name="section_info">Info</string>
+    <string name="theme_mode">Theme Mode</string>
+    <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
+    <string name="theme_oled">OLED</string>
     <string name="dynamic_color">Dynamic color</string>
     <string name="dynamic_color_description">Match colors from your Android wallpaper.</string>
     <string name="dynamic_color_unavailable">Available on Android 12 and newer.</string>
@@ -52,28 +62,41 @@
     <string name="about_title">About</string>
     <string name="about_description">App info, privacy, licenses, and support</string>
     <string name="about_app_info">App Info</string>
+    <string name="section_app_info">App Info</string>
     <string name="about_privacy_license">Privacy &amp; License</string>
+    <string name="section_privacy">Privacy &amp; License</string>
     <string name="about_support">Changelog &amp; Support</string>
+    <string name="section_changelogs">Changelog &amp; Support</string>
     <string name="version">Version</string>
     <string name="developer">Developer</string>
     <string name="developer_name">Tremors (@qtremors)</string>
+    <string name="developer_url">https://github.com/qtremors</string>
     <string name="website">Website</string>
+    <string name="website_url">https://qtremors.github.io/filion/</string>
+    <string name="website_display">qtremors.github.io/filion</string>
     <string name="repository">Repository</string>
+    <string name="repository_url">github.com/qtremors/filion</string>
+    <string name="repository_full_url">https://github.com/qtremors/filion</string>
     <string name="device">Device</string>
     <string name="privacy_policy">Privacy Policy</string>
     <string name="privacy_summary">Offline processing with no ads, analytics, or trackers.</string>
+    <string name="privacy_policy_url">https://github.com/qtremors/filion/blob/main/PRIVACY.md</string>
     <string name="project_license">Project License</string>
+    <string name="project_license_url">https://github.com/qtremors/filion/blob/main/LICENSE.md</string>
     <string name="mit_license">MIT License</string>
     <string name="open_source_licenses">Open Source Licenses</string>
     <string name="open_source_licenses_description">View third-party software and license terms.</string>
     <string name="view_releases">View Releases</string>
     <string name="view_releases_description">See downloads and release notes on GitHub.</string>
+    <string name="view_releases_url">https://github.com/qtremors/filion/releases</string>
     <string name="report_issue">Report an Issue</string>
     <string name="report_issue_description">Found a problem? Open a GitHub issue.</string>
+    <string name="report_issue_url">https://github.com/qtremors/filion/issues/new</string>
 
     <!-- Third-party licenses -->
     <string name="licenses_notice">Filion is MIT licensed. Its direct runtime libraries remain available under their own Apache License 2.0 terms.</string>
     <string name="licenses_libraries">Runtime Libraries</string>
+    <string name="licenses_section_libraries">Runtime Libraries</string>
     <string name="show_apache_license">Read Apache License 2.0</string>
     <string name="hide_apache_license">Hide Apache License 2.0</string>
 </resources>

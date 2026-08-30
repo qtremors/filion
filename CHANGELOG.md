@@ -1,10 +1,18 @@
 # Filion Changelog
 
 > **Project:** Filion
-> **Version:** 0.0.6
+> **Version:** 0.0.7
 > **Last Updated:** 2026-08-30
 
 ---
+
+## [0.0.7] - 2026-08-30
+
+- Added AndroidX splash screen with smooth startup preload and edge-to-edge system bar integration.
+- Upgraded Settings with Material 3 Expressive layout, interactive 4-mode theme selector (System, Light, Dark, OLED Pure Black), dynamic color toggle, and segmented scan folder cards.
+- Redesigned About page with collapsible top bar, tap-to-copy version and device specifications, and external project links.
+- Updated Open Source Licenses screen with complete runtime library notices and expandable Apache License 2.0 viewer.
+- Added spring motion curves, bounce click interactions, and system reduced-motion support across in-app screens.
 
 ## [0.0.6] - 2026-08-30
 

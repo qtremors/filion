@@ -2,7 +2,7 @@
 
 > Architecture, implementation notes, conventions, and verification guidance for Filion development.
 
-**Version:** 0.0.6 | **Last Updated:** 2026-08-30
+**Version:** 0.0.7 | **Last Updated:** 2026-08-30
 **Scope:** Internal development, 3D rendering architecture, UI paradigms, testing, and release maintenance.
 
 ---
@@ -164,8 +164,8 @@ Filion does not rely on direct filesystem file paths (`/storage/emulated/0/...`)
 | **Compile SDK** | 37 |
 | **Target SDK** | 37 |
 | **Min SDK** | 30 |
-| **Version Code** | 6 |
-| **Version Name** | `0.0.6` |
+| **Version Code** | 7 |
+| **Version Name** | `0.0.7` |
 | **Java Target** | JVM 11 |
 | **Gradle Version** | 9.5.0 |
 | **Gradle JVM** | JDK 21 |
@@ -229,11 +229,11 @@ Run commands from `filion-app/` with JDK 21 and Android SDK 37 installed. Use `g
 
 When running `./gradlew :app:assembleRelease`, the build produces optimized split APKs:
 
-- **64-bit ARM (recommended):** `app/build/outputs/apk/release/Filion-0.0.6-arm64-v8a.apk`
-- **32-bit ARM:** `app/build/outputs/apk/release/Filion-0.0.6-armeabi-v7a.apk`
-- **64-bit x86:** `app/build/outputs/apk/release/Filion-0.0.6-x86_64.apk`
-- **32-bit x86:** `app/build/outputs/apk/release/Filion-0.0.6-x86.apk`
-- **Universal:** `app/build/outputs/apk/release/Filion-0.0.6.apk`
+- **64-bit ARM (recommended):** `app/build/outputs/apk/release/Filion-0.0.7-arm64-v8a.apk`
+- **32-bit ARM:** `app/build/outputs/apk/release/Filion-0.0.7-armeabi-v7a.apk`
+- **64-bit x86:** `app/build/outputs/apk/release/Filion-0.0.7-x86_64.apk`
+- **32-bit x86:** `app/build/outputs/apk/release/Filion-0.0.7-x86.apk`
+- **Universal:** `app/build/outputs/apk/release/Filion-0.0.7.apk`
 
 ---
 

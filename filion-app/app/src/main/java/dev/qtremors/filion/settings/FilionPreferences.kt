@@ -12,7 +12,8 @@ private const val KEY_DYNAMIC_COLOR = "dynamic_color"
 enum class ThemeMode {
     SYSTEM,
     LIGHT,
-    DARK;
+    DARK,
+    OLED;
 
     companion object {
         fun fromStoredValue(value: String?): ThemeMode =
@@ -23,7 +24,8 @@ enum class ThemeMode {
 fun ThemeMode.resolveDarkTheme(systemDark: Boolean): Boolean = when (this) {
     ThemeMode.SYSTEM -> systemDark
     ThemeMode.LIGHT -> false
-    ThemeMode.DARK -> true
+    ThemeMode.DARK,
+    ThemeMode.OLED -> true
 }
 
 class FilionPreferences(context: Context) {

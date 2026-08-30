@@ -1,92 +1,118 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package dev.qtremors.filion.about
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
+import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.qtremors.filion.R
+import dev.qtremors.filion.theme.bounceClickable
+import dev.qtremors.filion.theme.expressiveSegmentedShapes
+import dev.qtremors.filion.theme.spacing
+import dev.qtremors.filion.ui.FilionScreenScaffold
+import dev.qtremors.filion.ui.FilionSectionHeader
 
-private data class LibraryNotice(
+private data class LibraryInfo(
     val name: String,
-    val detail: String,
+    val license: String,
     val url: String
 )
 
-private val libraryNotices = listOf(
-    LibraryNotice(
-        "AndroidX and Jetpack Compose",
-        "Apache License 2.0",
-        "https://github.com/androidx/androidx"
-    ),
-    LibraryNotice(
-        "Kotlin Coroutines",
-        "Apache License 2.0",
-        "https://github.com/Kotlin/kotlinx.coroutines"
-    ),
-    LibraryNotice(
-        "Google Filament",
-        "Apache License 2.0",
-        "https://github.com/google/filament"
-    ),
-    LibraryNotice(
-        "SceneView",
-        "Apache License 2.0",
-        "https://github.com/SceneView/sceneview"
-    )
+private val libraries = listOf(
+    LibraryInfo("AndroidX Core KTX", "Apache 2.0", "https://developer.android.com/jetpack/androidx/releases/core"),
+    LibraryInfo("AndroidX Activity Compose", "Apache 2.0", "https://developer.android.com/jetpack/androidx/releases/activity"),
+    LibraryInfo("AndroidX Lifecycle Runtime KTX", "Apache 2.0", "https://developer.android.com/jetpack/androidx/releases/lifecycle"),
+    LibraryInfo("AndroidX Core Splashscreen", "Apache 2.0", "https://developer.android.com/jetpack/androidx/releases/core"),
+    LibraryInfo("Jetpack Compose UI", "Apache 2.0", "https://developer.android.com/jetpack/compose"),
+    LibraryInfo("Jetpack Compose Material 3", "Apache 2.0", "https://developer.android.com/jetpack/compose"),
+    LibraryInfo("Jetpack Compose Material Icons Extended", "Apache 2.0", "https://developer.android.com/jetpack/compose"),
+    LibraryInfo("Kotlin Coroutines", "Apache 2.0", "https://github.com/Kotlin/kotlinx.coroutines"),
+    LibraryInfo("Google Filament", "Apache 2.0", "https://github.com/google/filament"),
+    LibraryInfo("SceneView", "Apache 2.0", "https://github.com/SceneView/sceneview")
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LicensesScreen(onNavigateBack: () -> Unit) {
     val resources = LocalResources.current
     val uriHandler = LocalUriHandler.current
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var showApacheText by rememberSaveable { mutableStateOf(false) }
+
     val apacheText = remember(resources) {
-        resources.openRawResource(R.raw.apache_2_0)
-            .bufferedReader()
-            .use { it.readText() }
+        runCatching {
+            resources.openRawResource(R.raw.apache_2_0)
+                .bufferedReader()
+                .use { it.readText() }
+        }.getOrDefault("Apache License 2.0")
     }
 
-    Scaffold(
+    FilionScreenScaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.open_source_licenses)) },
+            LargeTopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.open_source_licenses),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                scrollBehavior = scrollBehavior,
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .bounceClickable(onClick = onNavigateBack)
+                    ) {
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.back)
                         )
                     }
@@ -97,55 +123,78 @@ fun LicensesScreen(onNavigateBack: () -> Unit) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .navigationBarsPadding(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(top = padding.calculateTopPadding())
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(
+                top = 16.dp,
+                bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() +
+                    MaterialTheme.spacing.screenGutter
+            ),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             item {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = stringResource(R.string.licenses_notice),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(16.dp)
+                SegmentedListItem(
+                    onClick = {},
+                    shapes = expressiveSegmentedShapes(index = 0, count = 1),
+                    content = {
+                        Text(
+                            text = stringResource(R.string.licenses_notice),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    colors = ListItemDefaults.segmentedColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
                     )
-                }
+                )
             }
+
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = stringResource(R.string.licenses_libraries),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column {
-                            libraryNotices.forEachIndexed { index, library ->
-                                ListItem(
-                                    headlineContent = { Text(library.name) },
-                                    supportingContent = { Text(library.detail) },
-                                    leadingContent = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FilionSectionHeader(text = stringResource(R.string.licenses_section_libraries))
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)
+                    ) {
+                        libraries.forEachIndexed { index, lib ->
+                            SegmentedListItem(
+                                onClick = { uriHandler.openUri(lib.url) },
+                                shapes = expressiveSegmentedShapes(index = index, count = libraries.size),
+                                content = { Text(lib.name) },
+                                supportingContent = { Text(lib.license) },
+                                leadingContent = {
+                                    Box(
+                                        modifier = Modifier.fillMaxHeight(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
                                         Icon(
-                                            Icons.Default.Description,
+                                            imageVector = Icons.Default.Description,
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.primary
                                         )
-                                    },
-                                    trailingContent = {
-                                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null)
-                                    },
-                                    modifier = Modifier.clickable {
-                                        uriHandler.openUri(library.url)
                                     }
-                                )
-                                if (index < libraryNotices.lastIndex) HorizontalDivider()
-                            }
+                                },
+                                trailingContent = {
+                                    Box(
+                                        modifier = Modifier.fillMaxHeight(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.AutoMirrored.Filled.OpenInNew,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                },
+                                colors = ListItemDefaults.segmentedColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                ),
+                                modifier = Modifier.height(IntrinsicSize.Min)
+                            )
                         }
                     }
                 }
             }
+
             item {
                 OutlinedButton(
                     onClick = { showApacheText = !showApacheText },
@@ -158,6 +207,7 @@ fun LicensesScreen(onNavigateBack: () -> Unit) {
                     )
                 }
             }
+
             if (showApacheText) {
                 item {
                     Card(modifier = Modifier.fillMaxWidth()) {
